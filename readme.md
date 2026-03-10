@@ -3,32 +3,31 @@ Carrom Game Implementation
 A web-based Carrom Game built using modern web technologies.  
 This project aims to simulate a digital version of the traditional carrom board game where players can interact with the striker and coins on a virtual board.
 
-Technologies Used
+Technologies Used:
 
 Frontend
-- HTML
-- CSS
-- JavaScript
+HTML
+CSS
+JavaScript
 
 Backend
-- Node.js
-- Express.js
+Node.js + Express
 
 Database
-- MySQL
+MySQL
 
 Features
 
-- Interactive carrom board interface
-- Striker movement
-- Coin collision detection
-- Score tracking system
-- User login and registration
-- Backend API for game data
-- Database storage using MySQL
+Interactive carrom board interface
+Striker movement
+Coin collision detection
+Score tracking system
+User login and registration
+Backend API for game data
+Database storage using MySQL
 
 Contributors
-- Athmi S
-- Amrutha P K
-- Charikshma K
-- G Madhura Shastry
+Athmi S
+Amrutha P K
+Charikshma K
+G Madhura Shastry
