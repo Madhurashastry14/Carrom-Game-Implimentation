@@ -14,12 +14,12 @@
             margin: 0;
         }
 
-        .container {
+        .register-box {
             background: white;
-            padding: 30px;
-            width: 320px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0,0,0,0.3);
+            padding: 25px;
+            width: 300px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
         }
 
         h2 {
@@ -27,53 +27,47 @@
             margin-bottom: 20px;
         }
 
-        label {
-            font-weight: bold;
-        }
-
         input {
             width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            border-radius: 5px;
+            padding: 8px;
+            margin: 8px 0;
+            border-radius: 4px;
             border: 1px solid #ccc;
         }
 
-        .btn {
+        button {
             width: 100%;
             padding: 10px;
-            background: #8b5a2b;
+            margin-top: 10px;
+            background-color: #8b5a2b;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 16px;
         }
 
-        .btn:hover {
-            background: #6d4521;
+        button:hover {
+            background-color: #6d4521;
         }
 
-        .link {
+        .login-link {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 10px;
         }
 
-        .link a {
+        .login-link a {
             text-decoration: none;
             color: #8b5a2b;
             font-weight: bold;
         }
 
         .guest-btn {
-            background: #eee;
+            background: #ddd;
             color: black;
-            margin-top: 10px;
         }
 
         .guest-btn:hover {
-            background: #ddd;
+            background: #ccc;
         }
     </style>
 
@@ -81,35 +75,29 @@
 
 <body>
 
-<div class="container">
+<div class="register-box">
 
 <h2>Register</h2>
 
 <form action="index.html">
     
-    <label>Username</label>
-    <input type="text" required>
+    <input type="email" placeholder="Email" required>
 
-    <label>Email</label>
-    <input type="email" required>
+    <input type="password" placeholder="Password" required>
 
-    <label>Password</label>
-    <input type="password" required>
+    <input type="password" placeholder="Confirm Password" required>
 
-    <label>Confirm Password</label>
-    <input type="password" required>
-
-    <button type="submit" class="btn">Register</button>
+    <button type="submit">Register</button>
 
 </form>
 
-<div class="link">
+<div class="login-link">
     Already have an account? 
     <a href="login.html">Login</a>
 </div>
 
 <form action="index.html">
-    <button class="btn guest-btn">Continue without account</button>
+    <button class="guest-btn">Continue without account</button>
 </form>
 
 </div>
