@@ -12,7 +12,7 @@ Technologies Used:
 
 
 
-Frontend
+Frontend:
 
 * HTML
 * CSS
@@ -20,19 +20,19 @@ Frontend
 
 
 
-Backend
+Backend:
 
 * Node.js + Express
 
 
 
-Database
+Database:
 
 * MySQL
 
 
 
-Features
+Features:
 
 
 
@@ -46,7 +46,7 @@ Features
 
 
 
-Contributors
+Team members:
 
 * Athmi S
 * Amrutha P K
