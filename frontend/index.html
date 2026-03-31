@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            Home Page
+        </title> 
+        <style>
+            body {
+                background:radial-gradient(circle at center, #deb887 0%, #c89b6d 40%, #8b5a2b 100%);
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                font-family:Arial;
+                align-items: center;
+                height: 800px ;
+            }
+            .title {
+                position:absolute;
+                font-size: 20px;
+                top:20px;
+            }
+            #playbutton {
+                padding:20px 100px;
+                border:none;
+                border-radius: 20px;
+                font-size: 20px;
+                background-color: #795636;
+                margin-top: 300px;
+                position: absolute;
+            }
+            #playbutton:hover {
+                transform: scale(1.05);
+            }
+            #playbutton:active {
+                transform: scale(0.99);
+            }
+            #newgame {
+                padding:20px 75px;
+                border:none;
+                border-radius: 20px;
+                font-size: 20px;
+                background-color: #795636;
+                margin-top: 450px;
+            }
+            #newgame:hover {
+                transform: scale(1.05);
+            }
+            #newgame:active {
+                transform: scale(0.99);
+            }
+            .moreoption {
+                position: absolute;
+                background-color:transparent;
+                top:30px;
+                right:50px;
+                border:none;      
+                font-size: 30px;
+            }
+            .moreoption:hover {
+                transform: scale(1.2);
+            }
+            .moreoption:active {
+                transform: scale(0.9);
+            }
+            .more {
+                position: absolute;
+                top: 80px;
+                right:30px;
+                
+            }
+            .setting, .profile, .scoreboard {
+                border:none;
+                width:200px;
+                margin: 10px ;
+                border-radius: 12px;
+                padding:10px;
+                font-size: 20px;
+                background-color:#795636;
+                display: block;
+                cursor: pointer;
+            }
+            .setting:hover, .profile:hover, .scoreboard:hover {
+                transform: scale(1.05);
+            }
+            .setting:active, .profile:active, .scoreboard:active {
+                transform: scale(0.95);
+            }
+        </style>   
+    </head>
+    <body>
+        <div class="title">
+        <h2>
+            Welcome to Carrom Game!
+        </h2>
+        </div>
+            <button  id="playbutton"> Play ▶</button>
+            <button  id="newgame" style="display: none"> New Game</button>
+            <button class="moreoption"> ⋮ </button>
+            <div class="more" style="display: none">
+                <button class="profile">Profile</button>
+                <button class="scoreboard">Scoreboard</button>
+                <button class="setting"> Settings</button>
+            </div>
+        <script>
+            document.getElementById("playbutton").onclick = function() {
+                let playoption=document.getElementById("newgame");
+                if (playoption.style.display === "none" || playoption.style.display === "")                {
+                    playoption.style.display="block";
+                }
+                else
+                {
+                    playoption.style.display="none";
+                }
+            }
+            document.querySelector(".moreoption").onclick = function() {
+                let morefind = document.querySelector(".more");
+                if (morefind.style.display === "none" || morefind.style.display === "") {
+                    morefind.style.display = "block";
+                }
+                else
+                {
+                    morefind.style.display = "none";
+                }
+            }
+        </script>
+    </body>
+</html>
