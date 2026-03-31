@@ -26,9 +26,11 @@ Backend:
 
 
 
+
 Database:
 
 * MySQL
+
 
 
 
@@ -43,9 +45,6 @@ Features:
 * User login and registration
 * Backend API for game data
 * Database storage using MySQL
-
-
-
 Team members:
 
 * Athmi S

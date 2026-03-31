@@ -1,106 +1,151 @@
-<!DOCTYPE html>
-<html>
+
+<html lang="en">
 <head>
-    <title>Register</title>
+  <meta charset="UTF-8">
+  <title>Register</title>
+  <style>
+    * {
+      margin: 0;
+      
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: radial-gradient(circle at center, #deb887 0%, #c89b6d 40%, #8b5a2b 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
+    body {
+      height: 100vh;
+      background: radial-gradient(circle at center, #deb887 0%, #c89b6d 40%, #8b5a2b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-        .register-box {
-            background: white;
-            padding: 25px;
-            width: 300px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        }
+    .register-container {
+      background: #fff;
+      padding: 30px;
+      width: 320px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
+    .register-container h2 {
+      margin-bottom: 20px;
+      color: #5a3f2e;
+    }
 
-        input {
-            width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
+    .input-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
 
-        button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            background-color: #8b5a2b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
+    .input-group label {
+      font-size: 14px;
+      color: #333;
+    }
 
-        button:hover {
-            background-color: #6d4521;
-        }
+    .input-group input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+    .input-group input:focus {
+      border-color: #c19a6b;
+    }
 
-        .login-link {
-            text-align: center;
-            margin-top: 10px;
-        }
+  .register-btn {
+      width: 100%;
+      padding: 10px;
+      background: #5a3f2e;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 16px;
+    }
 
-        .login-link a {
-            text-decoration: none;
-            color: #8b5a2b;
-            font-weight: bold;
-        }
+    .register-btn:hover {
+      background: #3e2b20;
+    }
 
-        .guest-btn {
-            background: #ddd;
-            color: black;
-        }
+    .login-link, .guest-btn-container {
+      margin-top: 15px;
+      font-size: 14px;
+    }
 
-        .guest-btn:hover {
-            background: #ccc;
-        }
-    </style>
+    .login-link a {
+      color: #5a3f2e;
+      text-decoration: none;
+      font-weight: bold;
+    }
 
+    .login-link a:hover {
+      text-decoration: underline;
+    }
+
+    .guest-btn {
+      width: 100%;
+      padding: 10px;
+      background: #ddd;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    .guest-btn:hover {
+      background: #ccc;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="register-box">
+  <div class="register-container">
+    <h2>Register</h2>
 
-<h2>Register</h2>
+    <form onsubmit="redirectToHome(event)">
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" placeholder="Enter your email" required>
+      </div>
 
-<form action="index.html">
-    
-    <input type="email" placeholder="Email" required>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" placeholder="Enter your password" required>
+      </div>
 
-    <input type="password" placeholder="Password" required>
+      <div class="input-group">
+        <label>Confirm Password</label>
+        <input type="password" placeholder="Confirm your password" required>
+      </div>
 
-    <input type="password" placeholder="Confirm Password" required>
+      <button type="submit" class="register-btn">Register</button>
+    </form>
 
-    <button type="submit">Register</button>
+    <div class="login-link">
+      Already have an account? 
+      <a href="login.html">Login</a>
+    </div>
 
-</form>
+    <div class="guest-btn-container">
+      <form onsubmit="redirectToHome(event)">
+        <button class="guest-btn">Continue without account</button>
+      </form>
+    </div>
+  </div>
 
-<div class="login-link">
-    Already have an account? 
-    <a href="login.html">Login</a>
-</div>
-
-<form action="index.html">
-    <button class="guest-btn">Continue without account</button>
-</form>
-
-</div>
+  <script>
+    function redirectToHome(event) {
+      event.preventDefault();
+      window.location.href = "index.html";
+    }
+  </script>
 
 </body>
 </html>
