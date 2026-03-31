@@ -12,11 +12,7 @@ Technologies Used:
 
 
 
-<<<<<<< HEAD
-Frontend
-=======
 Frontend:
->>>>>>> a76e30ec08c84e3ba01a447f2a5d1089c16ecb97
 
 * HTML
 * CSS
@@ -24,31 +20,21 @@ Frontend:
 
 
 
-<<<<<<< HEAD
-Backend
-=======
 Backend:
->>>>>>> a76e30ec08c84e3ba01a447f2a5d1089c16ecb97
 
 * Node.js + Express
 
 
 
-<<<<<<< HEAD
-Database
-=======
+
 Database:
->>>>>>> a76e30ec08c84e3ba01a447f2a5d1089c16ecb97
 
 * MySQL
 
 
 
-<<<<<<< HEAD
-Features
-=======
+
 Features:
->>>>>>> a76e30ec08c84e3ba01a447f2a5d1089c16ecb97
 
 
 
@@ -59,14 +45,7 @@ Features:
 * User login and registration
 * Backend API for game data
 * Database storage using MySQL
-
-
-
-<<<<<<< HEAD
-Contributors
-=======
 Team members:
->>>>>>> a76e30ec08c84e3ba01a447f2a5d1089c16ecb97
 
 * Athmi S
 * Amrutha P K
