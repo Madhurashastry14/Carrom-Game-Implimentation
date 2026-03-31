@@ -1,137 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Carrom Login & Signup</title>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
 
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: linear-gradient(to right, #1d4350, #a43931);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    body {
+      height: 100vh;
+      background: radial-gradient(circle at center, #deb887 0%, #c89b6d 40%, #8b5a2b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
 
-.container {
-    background: white;
-    padding: 30px;
-    width: 320px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
+    .login-container {
+      background: #fff;
+      padding: 30px;
+      width: 320px;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    }
 
-h2 {
-    margin-bottom: 20px;
-}
+    .login-container h2 {
+      margin-bottom: 20px;
+      color: #5a3f2e;
+    }
 
-input {
-    width: 90%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
+    .input-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
 
-button {
-    width: 100%;
-    padding: 10px;
-    background: #a43931;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
+    .input-group label {
+      font-size: 14px;
+      color: #333;
+    }
 
-button:hover {
-    background: #1d4350;
-}
+    .input-group input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
 
-.toggle {
-    margin-top: 10px;
-    font-size: 14px;
-}
-.toggle label {
-    color: #a43931;
-    cursor: pointer;
-}
+    .input-group input:focus {
+      border-color: #c19a6b;
+    }
 
-#toggle-form {
-    display: none;
-}
+    .login-btn {
+      width: 100%;
+      padding: 10px;
+      background: #5a3f2e;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+      font-size: 16px;
+    }
 
-.signup {
-    display: none;
-}
+    .login-btn:hover {
+      background: #3e2b20;
+    }
 
-#toggle-form:checked ~ .container .login {
-    display: none;
-}
+    .signup-link {
+      margin-top: 15px;
+      font-size: 14px;
+    }
 
-#toggle-form:checked ~ .container .signup {
-    display: block;
-}
+    .signup-link a {
+      color: #5a3f2e;
+      text-decoration: none;
+      font-weight: bold;
+    }
 
-.rules {
-    font-size: 12px;
-    color: gray;
-    text-align: left;
-}
-</style>
-
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
 
-<!-- Hidden checkbox for toggle -->
-<input type="checkbox" id="toggle-form">
+  <div class="login-container">
+    <h2> Login</h2>
 
-<div class="container">
+    <form onsubmit="redirectToHome(event)">
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" required placeholder="Enter your email">
+      </div>
 
-    <!-- LOGIN -->
-    <div class="login">
-        <h2>Login</h2>
-        <form>
-            <input type="text" placeholder="Email" required>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" required placeholder="Enter your password">
+      </div>
 
-            <input type="password" placeholder="Password"
-                pattern="^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%*?&]).{8,}$"
-                title="Must contain at least 8 characters, one uppercase, one lowercase, one number and one special character"
-                required>
+      <button type="submit" class="login-btn">Login</button>
+    </form>
 
-            <button>Login</button>
-        </form>
-
-        <div class="toggle">
-            Don't have an account? 
-            <label for="toggle-form">Sign Up</label>
-        </div>
+    <div class="signup-link">
+      Don't have an account? 
+      <a href="register.html">Sign Up</a>
     </div>
+  </div>
 
-    <!-- SIGNUP -->
-    <div class="signup">
-        <h2>Sign Up</h2>
-        <form>
-            <input type="text" placeholder="Username" required>
-
-            <input type="email" placeholder="Email" required>
-
-            <input type="password" placeholder="Password"
-                pattern="^(?=.[a-z])(?=.[A-Z])(?=.\d)(?=.[@$!%*?&]).{8,}$"
-                title="Must contain at least 8 characters, one uppercase, one lowercase, one number and one special character"
-                required>
-
-            <button>Register</button>
-        </form>
-<div class="toggle">
-            Already have an account? 
-            <label for="toggle-form">Login</label>
-        </div>
-    </div>
-
-</div>
+  <script>
+    function redirectToHome(event) {
+      event.preventDefault();
+      window.location.href = "index.html";
+    }
+  </script>
 
 </body>
 </html>
