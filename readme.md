@@ -30,7 +30,7 @@ Features:
 * Backend API for game data
 * Database storage using MySQL
 
-Team members:
+Team members :
 
 * Athmi S
 * Amrutha P K
