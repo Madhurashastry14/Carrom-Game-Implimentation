@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login</title>
+  <link rel="stylesheet" href="css/login.css">
+</head>
+<body class="login_body">
+
+  <div class="login-container">
+    <h2> Login</h2>
+
+    <form onsubmit="redirectToHome(event)">
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" required placeholder="Enter your email">
+      </div>
+
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" required placeholder="Enter your password">
+      </div>
+
+      <button type="submit" class="login-btn">Login</button>
+    </form>
+
+    <div class="signup-link">
+      Don't have an account? 
+      <a href="register.html">Sign Up</a>
+    </div>
+  </div>
+  <script src="js/login.js"></script>
+</body>
+
+</html>
