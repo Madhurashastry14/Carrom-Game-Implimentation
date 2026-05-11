@@ -4,5 +4,10 @@
     justify-content: center;
     align-items: center;
     display: flex;
-    margin-top: 150px;
+    margin-top: 200px;
+}
+#board {
+    position:absolute;
+    left:470px;
+    top:120px;
 }
