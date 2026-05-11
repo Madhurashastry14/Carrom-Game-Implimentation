@@ -1,151 +1,25 @@
-
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Register</title>
-  <style>
-    * {
-      margin: 0;
-      
-      padding: 0;
-      box-sizing: border-box;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      height: 100vh;
-      background: radial-gradient(circle at center, #deb887 0%, #c89b6d 40%, #8b5a2b 100%);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .register-container {
-      background: #fff;
-      padding: 30px;
-      width: 320px;
-      border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      text-align: center;
-    }
-
-    .register-container h2 {
-      margin-bottom: 20px;
-      color: #5a3f2e;
-    }
-
-    .input-group {
-      margin-bottom: 15px;
-      text-align: left;
-    }
-
-    .input-group label {
-      font-size: 14px;
-      color: #333;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-      outline: none;
-    }
-    .input-group input:focus {
-      border-color: #c19a6b;
-    }
-
-  .register-btn {
-      width: 100%;
-      padding: 10px;
-      background: #5a3f2e;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    .register-btn:hover {
-      background: #3e2b20;
-    }
-
-    .login-link, .guest-btn-container {
-      margin-top: 15px;
-      font-size: 14px;
-    }
-
-    .login-link a {
-      color: #5a3f2e;
-      text-decoration: none;
-      font-weight: bold;
-    }
-
-    .login-link a:hover {
-      text-decoration: underline;
-    }
-
-    .guest-btn {
-      width: 100%;
-      padding: 10px;
-      background: #ddd;
-      color: black;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    .guest-btn:hover {
-      background: #ccc;
-    }
-  </style>
+    <title>Register</title>
+    <link rel="stylesheet" href="css/register.css">
 </head>
-<body>
-
-  <div class="register-container">
-    <h2>Register</h2>
-
-    <form onsubmit="redirectToHome(event)">
-      <div class="input-group">
-        <label>Email</label>
-        <input type="email" placeholder="Enter your email" required>
-      </div>
-
-      <div class="input-group">
-        <label>Password</label>
-        <input type="password" placeholder="Enter your password" required>
-      </div>
-
-      <div class="input-group">
-        <label>Confirm Password</label>
-        <input type="password" placeholder="Confirm your password" required>
-      </div>
-
-      <button type="submit" class="register-btn">Register</button>
-    </form>
-
-    <div class="login-link">
-      Already have an account? 
-      <a href="login.html">Login</a>
-    </div>
-
-    <div class="guest-btn-container">
-      <form onsubmit="redirectToHome(event)">
-        <button class="guest-btn">Continue without account</button>
-      </form>
-    </div>
-  </div>
-
-  <script>
-    function redirectToHome(event) {
-      event.preventDefault();
-      window.location.href = "index.html";
-    }
-  </script>
-
+<body class="register_body">
+<div class="register-box">
+<h2>Register</h2>
+<form action="index.html">
+    <input type="email" placeholder="Email" required>
+    <input type="password" placeholder="Password" required>
+    <input type="password" placeholder="Confirm Password" required>
+    <button type="submit">Register</button>
+</form>
+<div class="login-link">
+    Already have an account? 
+    <a href="login.html">Login</a>
+</div>
+<form action="index.html">
+    <button class="guest-btn">Continue without account</button>
+</form>
+</div>
 </body>
 </html>
