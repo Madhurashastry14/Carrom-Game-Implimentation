@@ -4,8 +4,6 @@ const ctx = canvas.getContext("2d");
 const board = new Image();
 board.src = "assets/board.jpeg";
 
-
-
 class Coin {
     constructor(x, y, radius, color) {
         this.x = x;
@@ -15,8 +13,6 @@ class Coin {
     }
 }
 
-
-
 const coins = [];
 
 const r = 12;
@@ -24,17 +20,13 @@ const r = 12;
 const cx = 560;
 const cy = 350;
 
-
-
 // STRIKER
 const striker = {
     x: 560,
     y: 500,
     radius: 12,
-    color: "white"
+    color: "#ed7c0b"
 };
-
-
 
 function createCoins() {
 
@@ -43,7 +35,7 @@ function createCoins() {
     const pos = [
 
         // CENTER QUEEN
-        { x: cx, y: cy, color: "#ff00ff" },
+        { x: cx, y: cy, color: "#ed0b3c" },
 
         // INNER CIRCLE
         { x: cx, y: cy - 2 * r, color: "white" },
@@ -69,7 +61,6 @@ function createCoins() {
     ];
 
 
-
     coins.length = 0;
 
     for (let p of pos) {
@@ -84,8 +75,6 @@ function createCoins() {
     }
 }
 
-
-
 function draw() {
 
     // CLEAR CANVAS
@@ -96,7 +85,6 @@ function draw() {
         canvas.height
     );
 
-
     // DRAW BOARD
     ctx.drawImage(
         board,
@@ -105,7 +93,6 @@ function draw() {
         480,
         480
     );
-
 
     // DRAW COINS
     for (let coin of coins) {
@@ -124,13 +111,11 @@ function draw() {
 
         ctx.fill();
 
-
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
 
         ctx.stroke();
-
-
+    
         // INNER RING
         ctx.beginPath();
 
@@ -149,8 +134,6 @@ function draw() {
 
         ctx.stroke();
     }
-
-
 
     // DRAW STRIKER
     ctx.beginPath();
@@ -172,9 +155,24 @@ function draw() {
     ctx.strokeStyle = "black";
 
     ctx.stroke();
+
+    ctx.beginPath();
+
+        ctx.arc(
+            striker.x,
+            striker.y,
+            striker.radius * 0.7,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.strokeStyle =
+            striker.color === "#ed7c0b"
+                ? "#ca5e10"
+                : "#555";
+
+        ctx.stroke();
 }
-
-
 
 // LOAD BOARD
 board.onload = function () {
@@ -184,12 +182,8 @@ board.onload = function () {
     draw();
 };
 
-
-
 // DRAGGING
 let dragging = false;
-
-
 
 canvas.addEventListener("mousedown", function (e) {
 
@@ -202,15 +196,11 @@ canvas.addEventListener("mousedown", function (e) {
     const mouseY =
         e.clientY - rect.top;
 
-
-
     const dx = mouseX - striker.x;
     const dy = mouseY - striker.y;
 
     const distance =
         Math.sqrt(dx * dx + dy * dy);
-
-
 
     if (distance < striker.radius) {
 
@@ -218,47 +208,32 @@ canvas.addEventListener("mousedown", function (e) {
     }
 });
 
-
-
 canvas.addEventListener("mouseup", function () {
 
     dragging = false;
 });
 
-
-
 canvas.addEventListener("mousemove", function (e) {
 
     if (!dragging) return;
 
-
-
     const rect =
         canvas.getBoundingClientRect();
-
-
 
     let mouseX =
         e.clientX - rect.left;
 
-
-
     // LEFT LIMIT
-    if (mouseX < 440) {
-        mouseX = 440;
+    if (mouseX < 432) {
+        mouseX = 432;
     }
-
 
     // RIGHT LIMIT
-    if (mouseX > 675) {
-        mouseX = 675;
+    if (mouseX > 694) {
+        mouseX = 694;
     }
 
-
-
     striker.x = mouseX;
-
-
 
     draw();
 });
