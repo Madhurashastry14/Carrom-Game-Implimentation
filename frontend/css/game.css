@@ -1,13 +1,19 @@
 .game_body {
-    background:radial-gradient(circle at center, #deb887 0%, #c89b6d 40%, #8b5a2b 100%);
-    font-family:Arial;
+    background: radial-gradient(circle at center,
+        #deb887 0%,
+        #c89b6d 40%,
+        #8b5a2b 100%);
+
+    font-family: Arial;
+
+    display: flex;
     justify-content: center;
     align-items: center;
-    display: flex;
-    margin-top: 200px;
+
+    height: 100vh;
+    margin: 0;
 }
+
 #board {
-    position:absolute;
-    left:200px;
-    top:50px;
+    position: relative;
 }
