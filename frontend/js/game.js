@@ -237,3 +237,260 @@ canvas.addEventListener("mousemove", function (e) {
 
     draw();
 });
+
+//  AIMING SYSTEM
+
+let aiming = false;
+let aimX = 0;
+let aimY = 0;
+let power = 0;
+const MAX_POWER = 90;
+// RIGHT CLICK TO START AIMING
+canvas.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+});
+// START AIM
+canvas.addEventListener("mousedown", function (e) {
+// RIGHT CLICK
+    if (e.button !== 2) return;
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    const mouseX =
+        e.clientX - rect.left;
+
+    const mouseY =
+        e.clientY - rect.top;
+
+    const dx = mouseX - striker.x;
+    const dy = mouseY - striker.y;
+
+    const distance =
+        Math.sqrt(dx * dx + dy * dy);
+
+    // ONLY AIM WHEN CLICKING NEAR STRIKER
+    if (distance < 80) {
+
+        aiming = true;
+
+        aimX = mouseX;
+        aimY = mouseY;
+    }
+});
+
+// UPDATE AIM
+canvas.addEventListener("mousemove", function (e) {
+
+    if (!aiming) return;
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    aimX =
+        e.clientX - rect.left;
+
+    aimY =
+        e.clientY - rect.top;
+
+    // POWER CALCULATION
+    const dx = striker.x - aimX;
+    const dy = striker.y - aimY;
+
+    power =
+        Math.sqrt(dx * dx + dy * dy);
+
+    // LIMIT POWER
+    if (power > MAX_POWER) {
+        power = MAX_POWER;
+    }
+
+    drawAim();
+});
+
+// RELEASE AIM
+canvas.addEventListener("mouseup", function (e) {
+
+    // RIGHT CLICK RELEASE
+    if (e.button !== 2) return;
+
+    aiming = false;
+
+    draw();
+});
+
+// DRAW AIM
+function drawAim() {
+    draw();
+
+    if (!aiming) return;
+
+    const dx = striker.x - aimX;
+    const dy = striker.y - aimY;
+
+    const angle =
+        Math.atan2(dy, dx);
+
+    // AIM LENGTH
+    const aimLength =
+         25 + power * 0.8;
+
+    // END POINT
+    const endX =
+        striker.x +
+        Math.cos(angle) * aimLength;
+
+    const endY =
+        striker.y +
+        Math.sin(angle) * aimLength;
+        // =====================
+// LIMIT AIM INSIDE BOARD
+// BOARD LIMITS
+const boardLeft = 320;
+const boardRight = 800;
+const boardTop = 140;
+const boardBottom = 620;
+
+// KEEP AIM INSIDE BOARD
+let limitedEndX = endX;
+let limitedEndY = endY;
+
+if (limitedEndX < boardLeft) {
+    limitedEndX = boardLeft;
+}
+
+if (limitedEndX > boardRight) {
+    limitedEndX = boardRight;
+}
+
+if (limitedEndY < boardTop) {
+    limitedEndY = boardTop;
+}
+
+if (limitedEndY > boardBottom) {
+    limitedEndY = boardBottom;
+}
+// MAIN AIM LINE
+    ctx.beginPath();
+
+    ctx.moveTo(
+        striker.x,
+        striker.y
+    );
+
+    ctx.lineTo(
+        limitedEndX,
+    limitedEndY
+    );
+// SMOOTH LINE
+    ctx.strokeStyle =
+        "rgba(255,255,255,0.95)";
+
+    ctx.lineWidth = 4;
+
+    ctx.lineCap = "round";
+
+    ctx.shadowColor =
+        "rgba(255,255,255,0.8)";
+
+    ctx.shadowBlur = 10;
+
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+
+    // DIRECTION POINTER
+  ctx.beginPath();
+
+    ctx.arc(
+    limitedEndX,
+    limitedEndY,
+    6,
+    0,
+    Math.PI * 2
+);
+
+    ctx.fillStyle =
+        "#00ffcc";
+
+    ctx.fill();
+
+    // POWER BAR
+    const barWidth = 140;
+    const barHeight = 12;
+
+    const barX = 40;
+    const barY = 40;
+
+    // BAR BACKGROUND
+    ctx.beginPath();
+
+    ctx.roundRect(
+        barX,
+        barY,
+        barWidth,
+        barHeight,
+        10
+    );
+
+    ctx.fillStyle =
+        "rgba(0,0,0,0.5)";
+
+    ctx.fill();
+
+    // POWER FILL
+    ctx.beginPath();
+
+    ctx.roundRect(
+        barX,
+        barY,
+        (power / MAX_POWER) * barWidth,
+        barHeight,
+        10
+    );
+
+    // POWER COLOR
+    let gradient =
+        ctx.createLinearGradient(
+            barX,
+            0,
+            barX + barWidth,
+            0
+        );
+
+    gradient.addColorStop(
+        0,
+        "#00ff99"
+    );
+
+    gradient.addColorStop(
+        0.5,
+        "#ffee00"
+    );
+
+    gradient.addColorStop(
+        1,
+        "#ff3300"
+    );
+
+    ctx.fillStyle = gradient;
+
+    ctx.fill();
+    // AIM CIRCLE
+    ctx.beginPath();
+
+    ctx.arc(
+        striker.x,
+        striker.y,
+        24,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.strokeStyle =
+        "rgba(255,255,255,0.35)";
+
+    ctx.lineWidth = 2;
+
+    ctx.stroke();
+}
