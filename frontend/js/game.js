@@ -246,12 +246,19 @@ let aimY = 0;
 let power = 0;
 const MAX_POWER = 90;
 // RIGHT CLICK TO START AIMING
+// ===============================
+// PROFESSIONAL TOGGLE AIM SYSTEM
+// ===============================
+
+// DISABLE RIGHT CLICK MENU
 canvas.addEventListener("contextmenu", function (e) {
     e.preventDefault();
 });
-// START AIM
+
+// RIGHT CLICK = TOGGLE AIM
 canvas.addEventListener("mousedown", function (e) {
-// RIGHT CLICK
+
+    // RIGHT CLICK ONLY
     if (e.button !== 2) return;
 
     const rect =
@@ -269,17 +276,22 @@ canvas.addEventListener("mousedown", function (e) {
     const distance =
         Math.sqrt(dx * dx + dy * dy);
 
-    // ONLY AIM WHEN CLICKING NEAR STRIKER
+    // CLICK NEAR STRIKER
     if (distance < 80) {
 
-        aiming = true;
+        // TOGGLE AIM
+        aiming = !aiming;
 
         aimX = mouseX;
         aimY = mouseY;
+
+        if (!aiming) {
+            draw();
+        }
     }
 });
 
-// UPDATE AIM
+// SMOOTH AIM MOVEMENT
 canvas.addEventListener("mousemove", function (e) {
 
     if (!aiming) return;
@@ -293,14 +305,12 @@ canvas.addEventListener("mousemove", function (e) {
     aimY =
         e.clientY - rect.top;
 
-    // POWER CALCULATION
     const dx = striker.x - aimX;
     const dy = striker.y - aimY;
 
     power =
         Math.sqrt(dx * dx + dy * dy);
 
-    // LIMIT POWER
     if (power > MAX_POWER) {
         power = MAX_POWER;
     }
@@ -308,17 +318,19 @@ canvas.addEventListener("mousemove", function (e) {
     drawAim();
 });
 
-// RELEASE AIM
-canvas.addEventListener("mouseup", function (e) {
+// LEFT CLICK = STOP AIM
+canvas.addEventListener("click", function (e) {
 
-    // RIGHT CLICK RELEASE
-    if (e.button !== 2) return;
+    // LEFT CLICK ONLY
+    if (e.button !== 0) return;
 
-    aiming = false;
+    if (aiming) {
 
-    draw();
+        aiming = false;
+
+        draw();
+    }
 });
-
 // DRAW AIM
 function drawAim() {
     draw();
