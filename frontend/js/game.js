@@ -345,7 +345,7 @@ function drawAim() {
 
     // AIM LENGTH
     const aimLength =
-         25 + power * 0.8;
+         25 + power * 0.55;
 
     // END POINT
     const endX =
@@ -400,7 +400,7 @@ if (limitedEndY > boardBottom) {
 
     ctx.lineWidth = 4;
 
-    ctx.lineCap = "round";
+    ctx.lineCap = "butt";
 
     ctx.shadowColor =
         "rgba(255,255,255,0.8)";
@@ -414,18 +414,63 @@ if (limitedEndY > boardBottom) {
     // DIRECTION POINTER
   ctx.beginPath();
 
-    ctx.arc(
+  const arrowSize = 14;
+
+// ARROW ANGLE
+const arrowAngle =
+    Math.atan2(
+        limitedEndY - striker.y,
+        limitedEndX - striker.x
+    );
+
+// ARROW SIDES
+const arrowX1 =
+    limitedEndX -
+    arrowSize * Math.cos(arrowAngle - Math.PI / 6);
+
+const arrowY1 =
+    limitedEndY -
+    arrowSize * Math.sin(arrowAngle - Math.PI / 6);
+
+const arrowX2 =
+    limitedEndX -
+    arrowSize * Math.cos(arrowAngle + Math.PI / 6);
+
+const arrowY2 =
+    limitedEndY -
+    arrowSize * Math.sin(arrowAngle + Math.PI / 6);
+
+// DRAW ARROW
+ctx.beginPath();
+
+ctx.moveTo(
     limitedEndX,
-    limitedEndY,
-    6,
-    0,
-    Math.PI * 2
+    limitedEndY
 );
 
-    ctx.fillStyle =
-        "#00ffcc";
+ctx.lineTo(
+    arrowX1,
+    arrowY1
+);
 
-    ctx.fill();
+ctx.lineTo(
+    arrowX2,
+    arrowY2
+);
+
+ctx.closePath();
+
+ctx.fillStyle =
+    "#ed7c0b";
+
+ctx.shadowColor =
+    "#ed7c0b";
+
+ctx.shadowBlur = 8;
+
+ctx.fill();
+
+ctx.shadowBlur = 0; 
 
     // POWER BAR
     const barWidth = 140;
