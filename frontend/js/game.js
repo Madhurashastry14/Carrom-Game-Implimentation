@@ -25,7 +25,9 @@ const striker = {
     x: 560,
     y: 500,
     radius: 12,
-    color: "#ed7c0b"
+    color: "#ed7c0b",
+    vx:0,
+    vy:0
 };
 
 function createCoins() {
@@ -245,6 +247,7 @@ let aimX = 0;
 let aimY = 0;
 let power = 0;
 const MAX_POWER = 90;
+let strikerReturned = false;
 // RIGHT CLICK TO START AIMING
 // ===============================
 // PROFESSIONAL TOGGLE AIM SYSTEM
@@ -321,14 +324,27 @@ canvas.addEventListener("mousemove", function (e) {
 // LEFT CLICK = STOP AIM
 canvas.addEventListener("click", function (e) {
 
-    // LEFT CLICK ONLY
     if (e.button !== 0) return;
 
     if (aiming) {
 
-        aiming = false;
+        const dx = striker.x - aimX;
+        const dy = striker.y - aimY;
 
-        draw();
+        const angle =
+            Math.atan2(dy, dx);
+
+        // SPEED BASED ON POWER
+        const speed = power * 0.22;
+
+        striker.vx =
+            Math.cos(angle) * speed;
+
+        striker.vy =
+            Math.sin(angle) * speed;
+            strikerReturned = false;
+
+        aiming = false;
     }
 });
 // DRAW AIM
@@ -506,3 +522,96 @@ if (limitedEndY > boardBottom) {
 
     ctx.stroke();
 }
+
+function updateStriker() {
+
+    striker.x += striker.vx;
+    striker.y += striker.vy;
+
+    // FRICTION
+    striker.vx *= 0.985;
+    striker.vy *= 0.985;
+
+    // STOP SMALL MOVEMENT
+    if (Math.abs(striker.vx) < 0.05) {
+        striker.vx = 0;
+    }
+
+    if (Math.abs(striker.vy) < 0.05) {
+        striker.vy = 0;
+    }
+
+    // BOARD WALLS
+    const leftWall = 340;
+    const rightWall = 780;
+    const topWall = 160;
+    const bottomWall = 600;
+
+    // LEFT
+    if (striker.x - striker.radius < leftWall) {
+
+        striker.x = leftWall + striker.radius;
+
+        striker.vx *= -1;
+    }
+
+    // RIGHT
+    if (striker.x + striker.radius > rightWall) {
+
+        striker.x = rightWall - striker.radius;
+
+        striker.vx *= -1;
+    }
+
+    // TOP
+    if (striker.y - striker.radius < topWall) {
+
+        striker.y = topWall + striker.radius;
+
+        striker.vy *= -1;
+    }
+
+    // BOTTOM
+    if (striker.y + striker.radius > bottomWall) {
+
+        striker.y = bottomWall - striker.radius;
+
+        striker.vy *= -1;
+    }
+    // RESET TO BASELINE
+// RESET STRIKER AFTER STOPPING
+if (strikerStopped() && !strikerReturned) {
+
+    striker.vx = 0;
+    striker.vy = 0;
+
+    striker.x = 560;
+    striker.y = 500;
+
+    strikerReturned = true;
+}
+}
+
+function strikerStopped() {
+
+    return (
+        Math.abs(striker.vx) < 0.05 &&
+        Math.abs(striker.vy) < 0.05
+    );
+}
+
+function gameLoop() {
+
+    updateStriker();
+
+    if (aiming) {
+        drawAim();
+    }
+    else {
+        draw();
+    }
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
