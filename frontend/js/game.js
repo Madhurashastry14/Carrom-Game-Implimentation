@@ -121,6 +121,7 @@ function draw() {
     ctx.strokeStyle = coin.color === "white" ? "#ddd" : "#555";
 
     ctx.stroke();
+    drawPlayerProfiles();
   }
   // DRAW BOTTOM STRIKER
   ctx.beginPath();
@@ -482,3 +483,75 @@ function gameLoop() {
 }
 
 gameLoop();
+// --- PLAYER DATA ---
+const player1 = { name: "PLAYER 1", score: 0, color: "#ed7c0b" };
+const player2 = { name: "PLAYER 2", score: 0, color: "#ed7c0b" };
+
+function drawPlayerProfiles() {
+    const cardWidth = 155; 
+    const cardHeight = 65;
+    const padding = 25;
+    const edgeSafety = 5; // Forces distance from canvas walls
+
+    const profiles = [
+        { 
+            p: player1, 
+            // Calculated X with a safety check to prevent left-side cutting
+            x: Math.max(edgeSafety, boardX - cardWidth - padding), 
+            y: boardY + boardHeight - cardHeight,
+        },
+        { 
+            p: player2, 
+            // Calculated X with a safety check to prevent right-side cutting
+            x: Math.min(canvas.width - cardWidth - edgeSafety, boardX + boardWidth + padding), 
+            y: boardY, 
+        }
+    ];
+
+    profiles.forEach(profile => {
+        const { p, x, y } = profile;
+
+        ctx.save();
+        
+        // --- 1. THE CARD BODY ---
+        ctx.beginPath();
+        ctx.roundRect(x, y, cardWidth, cardHeight, 12);
+        
+        // Solid dark background for professional look
+        ctx.fillStyle = "#111111"; 
+        ctx.fill();
+
+        // --- 2. THE NON-CUTTING STROKE ---
+        // We draw the stroke slightly INSIDE the box (x+1, y+1) 
+        // with a smaller width/height to ensure no edges are clipped
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(x + 1, y + 1, cardWidth - 2, cardHeight - 2, 11);
+        ctx.stroke();
+
+        // --- 3. TEXT RENDERING ---
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Player Name (Top half)
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 14px Arial, sans-serif";
+        ctx.fillText(p.name, x + cardWidth / 2, y + 22);
+
+        // Professional Divider
+        ctx.strokeStyle = "rgba(255,255,255,0.15)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + 15, y + 34);
+        ctx.lineTo(x + cardWidth - 15, y + 34);
+        ctx.stroke();
+
+        // Score (Bottom half)
+        ctx.fillStyle = p.color;
+        ctx.font = "bold 18px Arial, sans-serif";
+        ctx.fillText("SCORE: " + p.score.toString().padStart(2, '0'), x + cardWidth / 2, y + 48);
+        
+        ctx.restore();
+    });
+}
