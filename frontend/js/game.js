@@ -4,8 +4,6 @@ const ctx = canvas.getContext("2d");
 const board = new Image();
 board.src = "assets/board.jpeg";
 
-
-
 class Coin {
     constructor(x, y, radius, color) {
         this.x = x;
@@ -14,8 +12,6 @@ class Coin {
         this.color = color;
     }
 }
-
-
 
 const coins = [];
 
@@ -31,7 +27,9 @@ const striker = {
     x: 560,
     y: 500,
     radius: 12,
-    color: "white"
+    color: "#ed7c0b",
+    vx:0,
+    vy:0
 };
 
 
@@ -53,7 +51,7 @@ function createCoins() {
     const pos = [
 
         // CENTER QUEEN
-        { x: cx, y: cy, color: "#ff00ff" },
+        { x: cx, y: cy, color: "#ed0b3c" },
 
         // INNER CIRCLE
         { x: cx, y: cy - 2 * r, color: "white" },
@@ -79,7 +77,6 @@ function createCoins() {
     ];
 
 
-
     coins.length = 0;
 
     for (let p of pos) {
@@ -95,8 +92,6 @@ function createCoins() {
     }
 }
 
-
-
 function draw() {
 
     // CLEAR CANVAS
@@ -107,7 +102,6 @@ function draw() {
         canvas.height
     );
 
-
     // DRAW BOARD
     ctx.drawImage(
         board,
@@ -116,7 +110,6 @@ function draw() {
         480,
         480
     );
-
 
     // DRAW COINS
     for (let coin of coins) {
@@ -135,13 +128,11 @@ function draw() {
 
         ctx.fill();
 
-
         ctx.strokeStyle = "black";
         ctx.lineWidth = 1;
 
         ctx.stroke();
-
-
+    
         // INNER RING
         ctx.beginPath();
 
@@ -208,7 +199,23 @@ function draw() {
     ctx.stroke();
 }
 
+    ctx.beginPath();
 
+        ctx.arc(
+            striker.x,
+            striker.y,
+            striker.radius * 0.7,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.strokeStyle =
+            striker.color === "#ed7c0b"
+                ? "#ca5e10"
+                : "#555";
+
+        ctx.stroke();
+}
 
 // LOAD BOARD
 board.onload = function () {
@@ -218,13 +225,9 @@ board.onload = function () {
     draw();
 };
 
-
-
 // DRAGGING
 let draggingBottom = false;
 let draggingTop = false;
-
-
 
 canvas.addEventListener("mousedown", function (e) {
 
@@ -262,21 +265,15 @@ canvas.addEventListener("mousedown", function (e) {
     }
 });
 
-
-
 canvas.addEventListener("mouseup", function () {
 
     draggingBottom = false;
     draggingTop = false;
 });
 
-
-
 canvas.addEventListener("mousemove", function (e) {
 
     if (!draggingBottom && !draggingTop) return;
-
-
 
     const rect =
         canvas.getBoundingClientRect();
@@ -284,19 +281,76 @@ canvas.addEventListener("mousemove", function (e) {
     let mouseX =
         e.clientX - rect.left;
 
-
-
     // LEFT LIMIT
-    if (mouseX < 440) {
-        mouseX = 440;
+    if (mouseX < 432) {
+        mouseX = 432;
     }
+
+    // RIGHT LIMIT
+    if (mouseX > 694) {
+        mouseX = 694;
+    }
+
+    striker.x = mouseX;
+
+    draw();
+});
+
+//  AIMING SYSTEM
+
+let aiming = false;
+let aimX = 0;
+let aimY = 0;
+let power = 0;
+const MAX_POWER = 90;
+let strikerReturned = false;
+// RIGHT CLICK TO START AIMING
+// ===============================
+// PROFESSIONAL TOGGLE AIM SYSTEM
+// ===============================
+
+// DISABLE RIGHT CLICK MENU
+canvas.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+});
+
+// RIGHT CLICK = TOGGLE AIM
+canvas.addEventListener("mousedown", function (e) {
+
+    // RIGHT CLICK ONLY
+    if (e.button !== 2) return;
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    let mouseX =
+        e.clientX - rect.left;
+
+    // CLICK NEAR STRIKER
+    if (distance < 80) {
+
+        // TOGGLE AIM
+        aiming = !aiming;
+
+        aimX = mouseX;
+        aimY = mouseY;
+
+        if (!aiming) {
+            draw();
+        }
+    }
+});
 
     // RIGHT LIMIT
     if (mouseX > 675) {
         mouseX = 675;
     }
 
+    drawAim();
+});
 
+// LEFT CLICK = STOP AIM
+canvas.addEventListener("click", function (e) {
 
     // MOVE ONLY SELECTED STRIKER
     if (draggingBottom) {
@@ -307,7 +361,10 @@ canvas.addEventListener("mousemove", function (e) {
         topStriker.x = mouseX;
     }
 
+    if (aiming) {
 
+        const dx = striker.x - aimX;
+        const dy = striker.y - aimY;
 
     draw();
 });
