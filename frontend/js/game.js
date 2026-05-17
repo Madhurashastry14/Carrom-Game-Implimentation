@@ -4,658 +4,481 @@ const ctx = canvas.getContext("2d");
 const board = new Image();
 board.src = "assets/board.jpeg";
 
+// BOARD SIZE
+const boardWidth = 480;
+const boardHeight = 480;
 
+// CENTER BOARD
+const boardX = (canvas.width - boardWidth) / 2;
+const boardY = (canvas.height - boardHeight) / 2;
+
+// BOARD WALLS
+const leftWall = boardX + 20;
+const rightWall = boardX + boardWidth - 20;
+const topWall = boardY + 20;
+const bottomWall = boardY + boardHeight - 20;
+
+// BOARD CENTER
+const cx = boardX + boardWidth / 2 + 2;
+const cy = boardY + boardHeight / 2 - 27;
 
 class Coin {
-    constructor(x, y, radius, color) {
-        this.x = x;
-        this.y = y;
-        this.radius = radius;
-        this.color = color;
-    }
+  constructor(x, y, radius, color) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.color = color;
+  }
 }
-
-
 
 const coins = [];
 
 const r = 12;
 
-const cx = 560;
-const cy = 350;
-
-// STRIKER
+// BOTTOM STRIKER
 const striker = {
-    x: 560,
-    y: 500,
-    radius: 12,
-    color: "#ed7c0b",
-    vx:0,
-    vy:0
+  x: cx,
+  y: bottomWall - 100,
+  radius: 12,
+  color: "#ed7c0b",
+  vx: 0,
+  vy: 0,
+};
+
+// TOP STRIKER
+const topStriker = {
+  x: cx,
+  y: topWall + 60,
+  radius: 12,
+  color: "#ed7c0b",
+  vx: 0,
+  vy: 0,
 };
 
 function createCoins() {
+  const h = r * Math.sqrt(3);
 
-    const h = r * Math.sqrt(3);
+  const pos = [
+    // CENTER QUEEN
+    { x: cx, y: cy, color: "#f60a0a" },
 
-    const pos = [
+    // INNER CIRCLE
+    { x: cx, y: cy - 2 * r, color: "white" },
+    { x: cx + h, y: cy - r, color: "black" },
+    { x: cx + h, y: cy + r, color: "white" },
+    { x: cx, y: cy + 2 * r, color: "black" },
+    { x: cx - h, y: cy + r, color: "white" },
+    { x: cx - h, y: cy - r, color: "black" },
 
-        // CENTER QUEEN
-        { x: cx, y: cy, color: "#ff00ff" },
+    // OUTER CIRCLE
+    { x: cx, y: cy - 4 * r, color: "white" },
+    { x: cx + h, y: cy - 3 * r, color: "black" },
+    { x: cx + 2 * h, y: cy - 2 * r, color: "white" },
+    { x: cx + 2 * h, y: cy, color: "black" },
+    { x: cx + 2 * h, y: cy + 2 * r, color: "white" },
+    { x: cx + h, y: cy + 3 * r, color: "black" },
+    { x: cx, y: cy + 4 * r, color: "white" },
+    { x: cx - h, y: cy + 3 * r, color: "black" },
+    { x: cx - 2 * h, y: cy + 2 * r, color: "white" },
+    { x: cx - 2 * h, y: cy, color: "black" },
+    { x: cx - 2 * h, y: cy - 2 * r, color: "white" },
+    { x: cx - h, y: cy - 3 * r, color: "black" },
+  ];
 
-        // INNER CIRCLE
-        { x: cx, y: cy - 2 * r, color: "white" },
-        { x: cx + h, y: cy - r, color: "black" },
-        { x: cx + h, y: cy + r, color: "white" },
-        { x: cx, y: cy + 2 * r, color: "black" },
-        { x: cx - h, y: cy + r, color: "white" },
-        { x: cx - h, y: cy - r, color: "black" },
+  coins.length = 0;
 
-        // OUTER CIRCLE
-        { x: cx, y: cy - 4 * r, color: "white" },
-        { x: cx + h, y: cy - 3 * r, color: "black" },
-        { x: cx + 2 * h, y: cy - 2 * r, color: "white" },
-        { x: cx + 2 * h, y: cy, color: "black" },
-        { x: cx + 2 * h, y: cy + 2 * r, color: "white" },
-        { x: cx + h, y: cy + 3 * r, color: "black" },
-        { x: cx, y: cy + 4 * r, color: "white" },
-        { x: cx - h, y: cy + 3 * r, color: "black" },
-        { x: cx - 2 * h, y: cy + 2 * r, color: "white" },
-        { x: cx - 2 * h, y: cy, color: "black" },
-        { x: cx - 2 * h, y: cy - 2 * r, color: "white" },
-        { x: cx - h, y: cy - 3 * r, color: "black" }
-    ];
-
-
-
-    coins.length = 0;
-
-    for (let p of pos) {
-        coins.push(
-            new Coin(
-                p.x,
-                p.y,
-                r,
-                p.color
-            )
-        );
-    }
+  for (let p of pos) {
+    coins.push(new Coin(p.x, p.y, r, p.color));
+  }
 }
 
-
-
 function draw() {
+  // CLEAR CANVAS
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // CLEAR CANVAS
-    ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+  ctx.drawImage(board, boardX, boardY, boardWidth, boardHeight);
 
-
-    // DRAW BOARD
-    ctx.drawImage(
-        board,
-        320,
-        140,
-        480,
-        480
-    );
-
-
-    // DRAW COINS
-    for (let coin of coins) {
-
-        ctx.beginPath();
-
-        ctx.arc(
-            coin.x,
-            coin.y,
-            coin.radius,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fillStyle = coin.color;
-
-        ctx.fill();
-
-
-        ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
-
-        ctx.stroke();
-
-
-        // INNER RING
-        ctx.beginPath();
-
-        ctx.arc(
-            coin.x,
-            coin.y,
-            coin.radius * 0.7,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.strokeStyle =
-            coin.color === "white"
-                ? "#ddd"
-                : "#555";
-
-        ctx.stroke();
-    }
-
-    // DRAW STRIKER
+  // DRAW COINS
+  for (let coin of coins) {
     ctx.beginPath();
 
-    ctx.arc(
-        striker.x,
-        striker.y,
-        striker.radius,
-        0,
-        Math.PI * 2
-    );
+    ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
 
-    ctx.fillStyle = striker.color;
+    ctx.fillStyle = coin.color;
 
     ctx.fill();
 
-    ctx.lineWidth = 2;
-
     ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
 
     ctx.stroke();
 
+    // INNER RING
     ctx.beginPath();
 
+    ctx.arc(coin.x, coin.y, coin.radius * 0.7, 0, Math.PI * 2);
+
+    ctx.strokeStyle = coin.color === "white" ? "#ddd" : "#555";
+
+    ctx.stroke();
+  }
+  // DRAW BOTTOM STRIKER
+  ctx.beginPath();
+
+  ctx.arc(striker.x, striker.y, striker.radius, 0, Math.PI * 2);
+
+  ctx.fillStyle = striker.color;
+
+  ctx.fill();
+
+  ctx.lineWidth = 2;
+
+  ctx.strokeStyle = "black";
+
+  ctx.stroke();
+
+  //INNER RING
+  ctx.beginPath();
+
+  ctx.arc(striker.x, striker.y, striker.radius * 0.7, 0, Math.PI * 2);
+
+  ctx.strokeStyle = striker.color === "white" ? "#ddd" : "#b64f0a";
+
+  ctx.stroke();
+
+  // DRAW TOP STRIKER
+  ctx.beginPath();
+
+  ctx.arc(topStriker.x, topStriker.y, topStriker.radius, 0, Math.PI * 2);
+
+  ctx.fillStyle = topStriker.color;
+
+  ctx.fill();
+
+  ctx.lineWidth = 2;
+
+  ctx.strokeStyle = "black";
+
+  ctx.stroke();
+
+  ctx.beginPath();
+
+  ctx.arc(topStriker.x, topStriker.y, topStriker.radius * 0.7, 0, Math.PI * 2);
+
+  ctx.strokeStyle = topStriker.color === "white" ? "#ddd" : "#b64f0a";
+
+  ctx.stroke();
+}
 
 // LOAD BOARD
 board.onload = function () {
+  createCoins();
 
-    createCoins();
-
-    draw();
+  draw();
 };
 
-
-
 // DRAGGING
-let dragging = false;
+let draggingBottom = false;
+let draggingTop = false;
 
 canvas.addEventListener("mousedown", function (e) {
+  const rect = canvas.getBoundingClientRect();
 
-    const rect =
-        canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
 
-    const mouseX =
-        e.clientX - rect.left;
+  // BOTTOM STRIKER CHECK
+  let dx = mouseX - striker.x;
+  let dy = mouseY - striker.y;
 
-    const mouseY =
-        e.clientY - rect.top;
+  let distance = Math.sqrt(dx * dx + dy * dy);
 
-    const dx = mouseX - striker.x;
-    const dy = mouseY - striker.y;
+  // TOP STRIKER CHECK
+  let dxTop = mouseX - topStriker.x;
+  let dyTop = mouseY - topStriker.y;
 
-    const distance =
-        Math.sqrt(dx * dx + dy * dy);
+  let topDistance = Math.sqrt(dxTop * dxTop + dyTop * dyTop);
 
-    if (distance < striker.radius) {
+  if (distance < striker.radius) {
+    draggingBottom = true;
+  }
 
-        dragging = true;
-    }
+  if (topDistance < topStriker.radius) {
+    draggingTop = true;
+  }
 });
-
-
 
 canvas.addEventListener("mouseup", function () {
-
-    dragging = false;
+  draggingBottom = false;
+  draggingTop = false;
 });
 
-
-
 canvas.addEventListener("mousemove", function (e) {
+  if (!draggingBottom && !draggingTop) return;
 
-    if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
 
-    const rect =
-        canvas.getBoundingClientRect();
+  let mouseX = e.clientX - rect.left;
 
+  // LEFT LIMIT
+  if (mouseX < leftWall + 90) {
+    mouseX = leftWall + 90;
+  }
 
+  // RIGHT LIMIT
+  if (mouseX > rightWall - 90) {
+    mouseX = rightWall - 90;
+  }
 
-    let mouseX =
-        e.clientX - rect.left;
-
-
-
-    // LEFT LIMIT
-    if (mouseX < 440) {
-        mouseX = 440;
-    }
-
-    // RIGHT LIMIT
-    if (mouseX > 694) {
-        mouseX = 694;
-    }
-
+  // MOVE ONLY SELECTED STRIKER
+  if (draggingBottom) {
     striker.x = mouseX;
+  }
 
-    draw();
+  if (draggingTop) {
+    topStriker.x = mouseX;
+  }
+
+  draw();
 });
 
 //  AIMING SYSTEM
 
-let aiming = false;
-let aimX = 0;
-let aimY = 0;
-let power = 0;
+const aimState = {
+  bottom: {
+    aiming: false,
+    aimX: 0,
+    aimY: 0,
+    power: 0,
+  },
+  top: {
+    aiming: false,
+    aimX: 0,
+    aimY: 0,
+    power: 0,
+  },
+};
+
+let activeAiming = null; // "bottom" or "top"
 const MAX_POWER = 90;
 let strikerReturned = false;
+
 // RIGHT CLICK TO START AIMING
-// ===============================
-// PROFESSIONAL TOGGLE AIM SYSTEM
-// ===============================
 
 // DISABLE RIGHT CLICK MENU
 canvas.addEventListener("contextmenu", function (e) {
-    e.preventDefault();
+  e.preventDefault();
 });
 
 // RIGHT CLICK = TOGGLE AIM
 canvas.addEventListener("mousedown", function (e) {
+  if (e.button !== 2) return;
 
-    // RIGHT CLICK ONLY
-    if (e.button !== 2) return;
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
 
-    const rect =
-        canvas.getBoundingClientRect();
+  const check = (s) => {
+    const dx = mouseX - s.x;
+    const dy = mouseY - s.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
 
-    const mouseX =
-        e.clientX - rect.left;
+  const bottomDist = check(striker);
+  const topDist = check(topStriker);
 
-    const mouseY =
-        e.clientY - rect.top;
+  if (bottomDist < 80) {
+    activeAiming = "bottom";
+  } else if (topDist < 80) {
+    activeAiming = "top";
+  } else {
+    return;
+  }
 
-    const dx = mouseX - striker.x;
-    const dy = mouseY - striker.y;
+  const state = aimState[activeAiming];
+  state.aiming = !state.aiming;
 
-    const distance =
-        Math.sqrt(dx * dx + dy * dy);
-
-    // CLICK NEAR STRIKER
-    if (distance < 80) {
-
-        // TOGGLE AIM
-        aiming = !aiming;
-
-        aimX = mouseX;
-        aimY = mouseY;
-
-        if (!aiming) {
-            draw();
-        }
-    }
+  state.aimX = mouseX;
+  state.aimY = mouseY;
 });
 
 // SMOOTH AIM MOVEMENT
 canvas.addEventListener("mousemove", function (e) {
+  if (!activeAiming) return;
 
-    if (!aiming) return;
+  const state = aimState[activeAiming];
 
-    const rect =
-        canvas.getBoundingClientRect();
+  if (!state.aiming) return;
 
-    aimX =
-        e.clientX - rect.left;
+  const rect = canvas.getBoundingClientRect();
 
-    aimY =
-        e.clientY - rect.top;
+  state.aimX = e.clientX - rect.left;
+  state.aimY = e.clientY - rect.top;
 
-    const dx = striker.x - aimX;
-    const dy = striker.y - aimY;
+  const strikerRef = activeAiming === "bottom" ? striker : topStriker;
 
-    power =
-        Math.sqrt(dx * dx + dy * dy);
+  const dx = strikerRef.x - state.aimX;
+  const dy = strikerRef.y - state.aimY;
 
-    if (power > MAX_POWER) {
-        power = MAX_POWER;
-    }
+  state.power = Math.min(Math.sqrt(dx * dx + dy * dy), MAX_POWER);
+});
 
+// LEFT CLICK TO SHOOT
+canvas.addEventListener("click", function () {
+  if (!activeAiming) return;
 
+  const state = aimState[activeAiming];
+  if (!state.aiming) return;
 
-    if (e.button !== 0) return;
+  const strikerRef = activeAiming === "bottom" ? striker : topStriker;
 
+  const dx = strikerRef.x - state.aimX;
+  const dy = strikerRef.y - state.aimY;
 
-        const angle =
-            Math.atan2(dy, dx);
+  const angle = Math.atan2(dy, dx);
+  const speed = state.power * 0.22;
 
-        // SPEED BASED ON POWER
-        const speed = power * 0.22;
+  strikerRef.vx = Math.cos(angle) * speed;
+  strikerRef.vy = Math.sin(angle) * speed;
 
-        striker.vx =
-            Math.cos(angle) * speed;
+  state.aiming = false;
+  activeAiming = null;
 
-        striker.vy =
-            Math.sin(angle) * speed;
-            strikerReturned = false;
+  strikerReturned = false;
+  topStrikerReturned = false;
+});
 
-        aiming = false;
-    }
-);
-}
 // DRAW AIM
-function drawAim() {
-    draw();
+function drawAimFor(strikerRef, state) {
+  const dx = strikerRef.x - state.aimX;
+  const dy = strikerRef.y - state.aimY;
 
-    if (!aiming) return;
+  const angle = Math.atan2(dy, dx);
 
-    const dx = striker.x - aimX;
-    const dy = striker.y - aimY;
+  const aimLength = 25 + state.power * 0.55;
 
-    const angle =
-        Math.atan2(dy, dx);
+  const endX = strikerRef.x + Math.cos(angle) * aimLength;
+  const endY = strikerRef.y + Math.sin(angle) * aimLength;
 
-    // AIM LENGTH
-    const aimLength =
-         25 + power * 0.55;
+  let limitedEndX = Math.max(leftWall, Math.min(rightWall, endX));
+  let limitedEndY = Math.max(topWall, Math.min(bottomWall, endY));
 
-    // END POINT
-    const endX =
-        striker.x +
-        Math.cos(angle) * aimLength;
-
-    const endY =
-        striker.y +
-        Math.sin(angle) * aimLength;
-        // =====================
-// LIMIT AIM INSIDE BOARD
-// BOARD LIMITS
-const boardLeft = 320;
-const boardRight = 800;
-const boardTop = 140;
-const boardBottom = 620;
-
-// KEEP AIM INSIDE BOARD
-let limitedEndX = endX;
-let limitedEndY = endY;
-
-if (limitedEndX < boardLeft) {
-    limitedEndX = boardLeft;
-}
-
-if (limitedEndX > boardRight) {
-    limitedEndX = boardRight;
-}
-
-if (limitedEndY < boardTop) {
-    limitedEndY = boardTop;
-}
-
-if (limitedEndY > boardBottom) {
-    limitedEndY = boardBottom;
-}
-// MAIN AIM LINE
-    ctx.beginPath();
-
-    ctx.moveTo(
-        striker.x,
-        striker.y
-    );
-
-    ctx.lineTo(
-        limitedEndX,
-    limitedEndY
-    );
-// SMOOTH LINE
-    ctx.strokeStyle =
-        "rgba(255,255,255,0.95)";
-
-    ctx.lineWidth = 4;
-
-    ctx.lineCap = "butt";
-
-    ctx.shadowColor =
-        "rgba(255,255,255,0.8)";
-
-    ctx.shadowBlur = 10;
-
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
-
-    // DIRECTION POINTER
   ctx.beginPath();
+  ctx.moveTo(strikerRef.x, strikerRef.y);
+  ctx.lineTo(limitedEndX, limitedEndY);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.95)";
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // arrow
+  const arrowAngle = Math.atan2(
+    limitedEndY - strikerRef.y,
+    limitedEndX - strikerRef.x,
+  );
 
   const arrowSize = 14;
 
-// ARROW ANGLE
-const arrowAngle =
-    Math.atan2(
-        limitedEndY - striker.y,
-        limitedEndX - striker.x
-    );
+  const x1 = limitedEndX - arrowSize * Math.cos(arrowAngle - Math.PI / 6);
+  const y1 = limitedEndY - arrowSize * Math.sin(arrowAngle - Math.PI / 6);
+  const x2 = limitedEndX - arrowSize * Math.cos(arrowAngle + Math.PI / 6);
+  const y2 = limitedEndY - arrowSize * Math.sin(arrowAngle + Math.PI / 6);
 
-// ARROW SIDES
-const arrowX1 =
-    limitedEndX -
-    arrowSize * Math.cos(arrowAngle - Math.PI / 6);
+  ctx.beginPath();
+  ctx.moveTo(limitedEndX, limitedEndY);
+  ctx.lineTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.closePath();
 
-const arrowY1 =
-    limitedEndY -
-    arrowSize * Math.sin(arrowAngle - Math.PI / 6);
-
-const arrowX2 =
-    limitedEndX -
-    arrowSize * Math.cos(arrowAngle + Math.PI / 6);
-
-const arrowY2 =
-    limitedEndY -
-    arrowSize * Math.sin(arrowAngle + Math.PI / 6);
-
-// DRAW ARROW
-ctx.beginPath();
-
-ctx.moveTo(
-    limitedEndX,
-    limitedEndY
-);
-
-ctx.lineTo(
-    arrowX1,
-    arrowY1
-);
-
-ctx.lineTo(
-    arrowX2,
-    arrowY2
-);
-
-ctx.closePath();
-
-ctx.fillStyle =
-    "#ed7c0b";
-
-ctx.shadowColor =
-    "#ed7c0b";
-
-ctx.shadowBlur = 8;
-
-ctx.fill();
-
-ctx.shadowBlur = 0; 
-
-    // POWER BAR
-    const barWidth = 140;
-    const barHeight = 12;
-
-    const barX = 40;
-    const barY = 40;
-
-    // BAR BACKGROUND
-    ctx.beginPath();
-
-    ctx.roundRect(
-        barX,
-        barY,
-        barWidth,
-        barHeight,
-        10
-    );
-
-    ctx.fillStyle =
-        "rgba(0,0,0,0.5)";
-
-    ctx.fill();
-
-    // POWER FILL
-    ctx.beginPath();
-
-    ctx.roundRect(
-        barX,
-        barY,
-        (power / MAX_POWER) * barWidth,
-        barHeight,
-        10
-    );
-
-    // POWER COLOR
-    let gradient =
-        ctx.createLinearGradient(
-            barX,
-            0,
-            barX + barWidth,
-            0
-        );
-
-    gradient.addColorStop(
-        0,
-        "#00ff99"
-    );
-
-    gradient.addColorStop(
-        0.5,
-        "#ffee00"
-    );
-
-    gradient.addColorStop(
-        1,
-        "#ff3300"
-    );
-
-    ctx.fillStyle = gradient;
-
-    ctx.fill();
-    // AIM CIRCLE
-    ctx.beginPath();
-
-    ctx.arc(
-        striker.x,
-        striker.y,
-        24,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,0.35)";
-
-    ctx.lineWidth = 2;
-
-    ctx.stroke();
+  ctx.fillStyle = strikerRef.color;
+  ctx.fill();
 }
 
-function updateStriker() {
+function updatePiece(piece) {
+  piece.x += piece.vx;
+  piece.y += piece.vy;
 
-    striker.x += striker.vx;
-    striker.y += striker.vy;
+  // friction
+  piece.vx *= 0.985;
+  piece.vy *= 0.985;
 
-    // FRICTION
-    striker.vx *= 0.985;
-    striker.vy *= 0.985;
+  // stop small movement
+  if (Math.abs(piece.vx) < 0.05) piece.vx = 0;
+  if (Math.abs(piece.vy) < 0.05) piece.vy = 0;
 
-    // STOP SMALL MOVEMENT
-    if (Math.abs(striker.vx) < 0.05) {
-        striker.vx = 0;
-    }
+  // left wall
+  if (piece.x - piece.radius < leftWall) {
+    piece.x = leftWall + piece.radius;
+    piece.vx *= -1;
+  }
 
-    if (Math.abs(striker.vy) < 0.05) {
-        striker.vy = 0;
-    }
+  // right wall
+  if (piece.x + piece.radius > rightWall) {
+    piece.x = rightWall - piece.radius;
+    piece.vx *= -1;
+  }
 
-    // BOARD WALLS
-    const leftWall = 340;
-    const rightWall = 780;
-    const topWall = 160;
-    const bottomWall = 600;
+  // top wall
+  if (piece.y - piece.radius < topWall) {
+    piece.y = topWall + piece.radius;
+    piece.vy *= -1;
+  }
 
-    // LEFT
-    if (striker.x - striker.radius < leftWall) {
+  // bottom wall
+  if (piece.y + piece.radius > bottomWall) {
+    piece.y = bottomWall - piece.radius;
+    piece.vy *= -1;
+  }
+}
 
-        striker.x = leftWall + striker.radius;
+let topStrikerReturned = false;
 
-        striker.vx *= -1;
-    }
+function resetStriker(piece, isBottom) {
+  piece.vx = 0;
+  piece.vy = 0;
 
-    // RIGHT
-    if (striker.x + striker.radius > rightWall) {
+  piece.x = cx;
+  piece.y = isBottom ? bottomWall - 100 : topWall + 60;
+}
 
-        striker.x = rightWall - striker.radius;
+function updateGame() {
+  updatePiece(striker);
+  updatePiece(topStriker);
 
-        striker.vx *= -1;
-    }
-
-    // TOP
-    if (striker.y - striker.radius < topWall) {
-
-        striker.y = topWall + striker.radius;
-
-        striker.vy *= -1;
-    }
-
-    // BOTTOM
-    if (striker.y + striker.radius > bottomWall) {
-
-        striker.y = bottomWall - striker.radius;
-
-        striker.vy *= -1;
-    }
-    // RESET TO BASELINE
-// RESET STRIKER AFTER STOPPING
-if (strikerStopped() && !strikerReturned) {
-
-    striker.vx = 0;
-    striker.vy = 0;
-
-    striker.x = 560;
-    striker.y = 500;
-
+  // reset only bottom striker (if you want asymmetry)
+  if (strikerStopped() && !strikerReturned) {
+    resetStriker(striker, true);
     strikerReturned = true;
-}
+  }
+
+  if (topStrikerStopped() && !topStrikerReturned) {
+    resetStriker(topStriker, false);
+    topStrikerReturned = true;
+  }
 }
 
 function strikerStopped() {
+  return Math.abs(striker.vx) < 0.05 && Math.abs(striker.vy) < 0.05;
+}
 
-    return (
-        Math.abs(striker.vx) < 0.05 &&
-        Math.abs(striker.vy) < 0.05
-    );
+function topStrikerStopped() {
+  return Math.abs(topStriker.vx) < 0.05 && Math.abs(topStriker.vy) < 0.05;
 }
 
 function gameLoop() {
+  updateGame();
 
-    updateStriker();
+  draw();
 
-    if (aiming) {
-        drawAim();
-    }
-    else {
-        draw();
-    }
+  if (aimState.bottom.aiming) {
+    drawAimFor(striker, aimState.bottom);
+  }
 
-    requestAnimationFrame(gameLoop);
+  if (aimState.top.aiming) {
+    drawAimFor(topStriker, aimState.top);
+  }
+
+  requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
