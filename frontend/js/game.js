@@ -20,7 +20,9 @@ const r = 12;
 const cx = 560;
 const cy = 350;
 
-// STRIKER
+
+
+// BOTTOM STRIKER
 const striker = {
     x: 560,
     y: 500,
@@ -29,6 +31,18 @@ const striker = {
     vx:0,
     vy:0
 };
+
+
+
+// TOP STRIKER
+const topStriker = {
+    x: 560,
+    y: 216,
+    radius: 12,
+    color: "white"
+};
+
+
 
 function createCoins() {
 
@@ -66,6 +80,7 @@ function createCoins() {
     coins.length = 0;
 
     for (let p of pos) {
+
         coins.push(
             new Coin(
                 p.x,
@@ -137,7 +152,9 @@ function draw() {
         ctx.stroke();
     }
 
-    // DRAW STRIKER
+
+
+    // DRAW BOTTOM STRIKER
     ctx.beginPath();
 
     ctx.arc(
@@ -157,6 +174,30 @@ function draw() {
     ctx.strokeStyle = "black";
 
     ctx.stroke();
+
+
+
+    // DRAW TOP STRIKER
+    ctx.beginPath();
+
+    ctx.arc(
+        topStriker.x,
+        topStriker.y,
+        topStriker.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = topStriker.color;
+
+    ctx.fill();
+
+    ctx.lineWidth = 2;
+
+    ctx.strokeStyle = "black";
+
+    ctx.stroke();
+}
 
     ctx.beginPath();
 
@@ -185,39 +226,54 @@ board.onload = function () {
 };
 
 // DRAGGING
-let dragging = false;
+let draggingBottom = false;
+let draggingTop = false;
 
 canvas.addEventListener("mousedown", function (e) {
 
-    const rect =
-        canvas.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
 
-    const mouseX =
-        e.clientX - rect.left;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
-    const mouseY =
-        e.clientY - rect.top;
 
-    const dx = mouseX - striker.x;
-    const dy = mouseY - striker.y;
 
-    const distance =
+    // BOTTOM STRIKER CHECK
+    let dx = mouseX - striker.x;
+    let dy = mouseY - striker.y;
+
+    let distance =
         Math.sqrt(dx * dx + dy * dy);
 
-    if (distance < striker.radius) {
 
-        dragging = true;
+
+    // TOP STRIKER CHECK
+    let dxTop = mouseX - topStriker.x;
+    let dyTop = mouseY - topStriker.y;
+
+    let topDistance =
+        Math.sqrt(dxTop * dxTop + dyTop * dyTop);
+
+
+
+    if (distance < striker.radius) {
+        draggingBottom = true;
+    }
+
+    if (topDistance < topStriker.radius) {
+        draggingTop = true;
     }
 });
 
 canvas.addEventListener("mouseup", function () {
 
-    dragging = false;
+    draggingBottom = false;
+    draggingTop = false;
 });
 
 canvas.addEventListener("mousemove", function (e) {
 
-    if (!dragging) return;
+    if (!draggingBottom && !draggingTop) return;
 
     const rect =
         canvas.getBoundingClientRect();
@@ -267,17 +323,8 @@ canvas.addEventListener("mousedown", function (e) {
     const rect =
         canvas.getBoundingClientRect();
 
-    const mouseX =
+    let mouseX =
         e.clientX - rect.left;
-
-    const mouseY =
-        e.clientY - rect.top;
-
-    const dx = mouseX - striker.x;
-    const dy = mouseY - striker.y;
-
-    const distance =
-        Math.sqrt(dx * dx + dy * dy);
 
     // CLICK NEAR STRIKER
     if (distance < 80) {
@@ -294,28 +341,9 @@ canvas.addEventListener("mousedown", function (e) {
     }
 });
 
-// SMOOTH AIM MOVEMENT
-canvas.addEventListener("mousemove", function (e) {
-
-    if (!aiming) return;
-
-    const rect =
-        canvas.getBoundingClientRect();
-
-    aimX =
-        e.clientX - rect.left;
-
-    aimY =
-        e.clientY - rect.top;
-
-    const dx = striker.x - aimX;
-    const dy = striker.y - aimY;
-
-    power =
-        Math.sqrt(dx * dx + dy * dy);
-
-    if (power > MAX_POWER) {
-        power = MAX_POWER;
+    // RIGHT LIMIT
+    if (mouseX > 675) {
+        mouseX = 675;
     }
 
     drawAim();
@@ -324,339 +352,19 @@ canvas.addEventListener("mousemove", function (e) {
 // LEFT CLICK = STOP AIM
 canvas.addEventListener("click", function (e) {
 
-    if (e.button !== 0) return;
+    // MOVE ONLY SELECTED STRIKER
+    if (draggingBottom) {
+        striker.x = mouseX;
+    }
+
+    if (draggingTop) {
+        topStriker.x = mouseX;
+    }
 
     if (aiming) {
 
         const dx = striker.x - aimX;
         const dy = striker.y - aimY;
 
-        const angle =
-            Math.atan2(dy, dx);
-
-        // SPEED BASED ON POWER
-        const speed = power * 0.22;
-
-        striker.vx =
-            Math.cos(angle) * speed;
-
-        striker.vy =
-            Math.sin(angle) * speed;
-            strikerReturned = false;
-
-        aiming = false;
-    }
-});
-// DRAW AIM
-function drawAim() {
     draw();
-
-    if (!aiming) return;
-
-    const dx = striker.x - aimX;
-    const dy = striker.y - aimY;
-
-    const angle =
-        Math.atan2(dy, dx);
-
-    // AIM LENGTH
-    const aimLength =
-         25 + power * 0.55;
-
-    // END POINT
-    const endX =
-        striker.x +
-        Math.cos(angle) * aimLength;
-
-    const endY =
-        striker.y +
-        Math.sin(angle) * aimLength;
-        // =====================
-// LIMIT AIM INSIDE BOARD
-// BOARD LIMITS
-const boardLeft = 320;
-const boardRight = 800;
-const boardTop = 140;
-const boardBottom = 620;
-
-// KEEP AIM INSIDE BOARD
-let limitedEndX = endX;
-let limitedEndY = endY;
-
-if (limitedEndX < boardLeft) {
-    limitedEndX = boardLeft;
-}
-
-if (limitedEndX > boardRight) {
-    limitedEndX = boardRight;
-}
-
-if (limitedEndY < boardTop) {
-    limitedEndY = boardTop;
-}
-
-if (limitedEndY > boardBottom) {
-    limitedEndY = boardBottom;
-}
-// MAIN AIM LINE
-    ctx.beginPath();
-
-    ctx.moveTo(
-        striker.x,
-        striker.y
-    );
-
-    ctx.lineTo(
-        limitedEndX,
-    limitedEndY
-    );
-// SMOOTH LINE
-    ctx.strokeStyle =
-        "rgba(255,255,255,0.95)";
-
-    ctx.lineWidth = 4;
-
-    ctx.lineCap = "butt";
-
-    ctx.shadowColor =
-        "rgba(255,255,255,0.8)";
-
-    ctx.shadowBlur = 10;
-
-    ctx.stroke();
-
-    ctx.shadowBlur = 0;
-
-    // DIRECTION POINTER
-  ctx.beginPath();
-
-  const arrowSize = 14;
-
-// ARROW ANGLE
-const arrowAngle =
-    Math.atan2(
-        limitedEndY - striker.y,
-        limitedEndX - striker.x
-    );
-
-// ARROW SIDES
-const arrowX1 =
-    limitedEndX -
-    arrowSize * Math.cos(arrowAngle - Math.PI / 6);
-
-const arrowY1 =
-    limitedEndY -
-    arrowSize * Math.sin(arrowAngle - Math.PI / 6);
-
-const arrowX2 =
-    limitedEndX -
-    arrowSize * Math.cos(arrowAngle + Math.PI / 6);
-
-const arrowY2 =
-    limitedEndY -
-    arrowSize * Math.sin(arrowAngle + Math.PI / 6);
-
-// DRAW ARROW
-ctx.beginPath();
-
-ctx.moveTo(
-    limitedEndX,
-    limitedEndY
-);
-
-ctx.lineTo(
-    arrowX1,
-    arrowY1
-);
-
-ctx.lineTo(
-    arrowX2,
-    arrowY2
-);
-
-ctx.closePath();
-
-ctx.fillStyle =
-    "#ed7c0b";
-
-ctx.shadowColor =
-    "#ed7c0b";
-
-ctx.shadowBlur = 8;
-
-ctx.fill();
-
-ctx.shadowBlur = 0; 
-
-    // POWER BAR
-    const barWidth = 140;
-    const barHeight = 12;
-
-    const barX = 40;
-    const barY = 40;
-
-    // BAR BACKGROUND
-    ctx.beginPath();
-
-    ctx.roundRect(
-        barX,
-        barY,
-        barWidth,
-        barHeight,
-        10
-    );
-
-    ctx.fillStyle =
-        "rgba(0,0,0,0.5)";
-
-    ctx.fill();
-
-    // POWER FILL
-    ctx.beginPath();
-
-    ctx.roundRect(
-        barX,
-        barY,
-        (power / MAX_POWER) * barWidth,
-        barHeight,
-        10
-    );
-
-    // POWER COLOR
-    let gradient =
-        ctx.createLinearGradient(
-            barX,
-            0,
-            barX + barWidth,
-            0
-        );
-
-    gradient.addColorStop(
-        0,
-        "#00ff99"
-    );
-
-    gradient.addColorStop(
-        0.5,
-        "#ffee00"
-    );
-
-    gradient.addColorStop(
-        1,
-        "#ff3300"
-    );
-
-    ctx.fillStyle = gradient;
-
-    ctx.fill();
-    // AIM CIRCLE
-    ctx.beginPath();
-
-    ctx.arc(
-        striker.x,
-        striker.y,
-        24,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,0.35)";
-
-    ctx.lineWidth = 2;
-
-    ctx.stroke();
-}
-
-function updateStriker() {
-
-    striker.x += striker.vx;
-    striker.y += striker.vy;
-
-    // FRICTION
-    striker.vx *= 0.985;
-    striker.vy *= 0.985;
-
-    // STOP SMALL MOVEMENT
-    if (Math.abs(striker.vx) < 0.05) {
-        striker.vx = 0;
-    }
-
-    if (Math.abs(striker.vy) < 0.05) {
-        striker.vy = 0;
-    }
-
-    // BOARD WALLS
-    const leftWall = 340;
-    const rightWall = 780;
-    const topWall = 160;
-    const bottomWall = 600;
-
-    // LEFT
-    if (striker.x - striker.radius < leftWall) {
-
-        striker.x = leftWall + striker.radius;
-
-        striker.vx *= -1;
-    }
-
-    // RIGHT
-    if (striker.x + striker.radius > rightWall) {
-
-        striker.x = rightWall - striker.radius;
-
-        striker.vx *= -1;
-    }
-
-    // TOP
-    if (striker.y - striker.radius < topWall) {
-
-        striker.y = topWall + striker.radius;
-
-        striker.vy *= -1;
-    }
-
-    // BOTTOM
-    if (striker.y + striker.radius > bottomWall) {
-
-        striker.y = bottomWall - striker.radius;
-
-        striker.vy *= -1;
-    }
-    // RESET TO BASELINE
-// RESET STRIKER AFTER STOPPING
-if (strikerStopped() && !strikerReturned) {
-
-    striker.vx = 0;
-    striker.vy = 0;
-
-    striker.x = 560;
-    striker.y = 500;
-
-    strikerReturned = true;
-}
-}
-
-function strikerStopped() {
-
-    return (
-        Math.abs(striker.vx) < 0.05 &&
-        Math.abs(striker.vy) < 0.05
-    );
-}
-
-function gameLoop() {
-
-    updateStriker();
-
-    if (aiming) {
-        drawAim();
-    }
-    else {
-        draw();
-    }
-
-    requestAnimationFrame(gameLoop);
-}
-
-gameLoop();
+});
