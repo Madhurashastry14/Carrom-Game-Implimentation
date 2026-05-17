@@ -26,10 +26,20 @@ const cy = 350;
 
 
 
-// STRIKER
+// BOTTOM STRIKER
 const striker = {
     x: 560,
     y: 500,
+    radius: 12,
+    color: "white"
+};
+
+
+
+// TOP STRIKER
+const topStriker = {
+    x: 560,
+    y: 216,
     radius: 12,
     color: "white"
 };
@@ -73,6 +83,7 @@ function createCoins() {
     coins.length = 0;
 
     for (let p of pos) {
+
         coins.push(
             new Coin(
                 p.x,
@@ -152,7 +163,7 @@ function draw() {
 
 
 
-    // DRAW STRIKER
+    // DRAW BOTTOM STRIKER
     ctx.beginPath();
 
     ctx.arc(
@@ -164,6 +175,29 @@ function draw() {
     );
 
     ctx.fillStyle = striker.color;
+
+    ctx.fill();
+
+    ctx.lineWidth = 2;
+
+    ctx.strokeStyle = "black";
+
+    ctx.stroke();
+
+
+
+    // DRAW TOP STRIKER
+    ctx.beginPath();
+
+    ctx.arc(
+        topStriker.x,
+        topStriker.y,
+        topStriker.radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = topStriker.color;
 
     ctx.fill();
 
@@ -187,34 +221,44 @@ board.onload = function () {
 
 
 // DRAGGING
-let dragging = false;
+let draggingBottom = false;
+let draggingTop = false;
 
 
 
 canvas.addEventListener("mousedown", function (e) {
 
-    const rect =
-        canvas.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
 
-    const mouseX =
-        e.clientX - rect.left;
-
-    const mouseY =
-        e.clientY - rect.top;
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
 
 
 
-    const dx = mouseX - striker.x;
-    const dy = mouseY - striker.y;
+    // BOTTOM STRIKER CHECK
+    let dx = mouseX - striker.x;
+    let dy = mouseY - striker.y;
 
-    const distance =
+    let distance =
         Math.sqrt(dx * dx + dy * dy);
 
 
 
-    if (distance < striker.radius) {
+    // TOP STRIKER CHECK
+    let dxTop = mouseX - topStriker.x;
+    let dyTop = mouseY - topStriker.y;
 
-        dragging = true;
+    let topDistance =
+        Math.sqrt(dxTop * dxTop + dyTop * dyTop);
+
+
+
+    if (distance < striker.radius) {
+        draggingBottom = true;
+    }
+
+    if (topDistance < topStriker.radius) {
+        draggingTop = true;
     }
 });
 
@@ -222,21 +266,20 @@ canvas.addEventListener("mousedown", function (e) {
 
 canvas.addEventListener("mouseup", function () {
 
-    dragging = false;
+    draggingBottom = false;
+    draggingTop = false;
 });
 
 
 
 canvas.addEventListener("mousemove", function (e) {
 
-    if (!dragging) return;
+    if (!draggingBottom && !draggingTop) return;
 
 
 
     const rect =
         canvas.getBoundingClientRect();
-
-
 
     let mouseX =
         e.clientX - rect.left;
@@ -248,7 +291,6 @@ canvas.addEventListener("mousemove", function (e) {
         mouseX = 440;
     }
 
-
     // RIGHT LIMIT
     if (mouseX > 675) {
         mouseX = 675;
@@ -256,7 +298,14 @@ canvas.addEventListener("mousemove", function (e) {
 
 
 
-    striker.x = mouseX;
+    // MOVE ONLY SELECTED STRIKER
+    if (draggingBottom) {
+        striker.x = mouseX;
+    }
+
+    if (draggingTop) {
+        topStriker.x = mouseX;
+    }
 
 
 
