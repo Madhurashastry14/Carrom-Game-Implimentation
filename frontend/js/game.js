@@ -18,7 +18,7 @@ const boardY = (canvas.height - boardHeight) / 2;
 const leftWall = boardX + 20;
 const rightWall = boardX + boardWidth - 20;
 const topWall = boardY + 20;
-const bottomWall = boardY + boardHeight - 20;
+const bottomWall = boardY + boardHeight - 38;
 
 // BOARD CENTER
 const cx = boardX + boardWidth / 2 + 2;
@@ -40,7 +40,7 @@ const r = 12;
 // BOTTOM STRIKER
 const striker = {
   x: cx,
-  y: bottomWall - 100,
+  y: bottomWall - 80,
   radius: 12,
   color: "#ed7c0b",
   vx: 0,
@@ -230,7 +230,7 @@ const aimState = {
   top: { aiming: false, aimX: 0, aimY: 0, power: 0 },
 };
 
-let activeAiming = null; 
+let activeAiming = null;
 const MAX_POWER = 90;
 
 let strikerReturned = false;
@@ -322,7 +322,7 @@ canvas.addEventListener("click", function () {
 
   strikerReturned = false;
   topStrikerReturned = false;
-  turnSwitchPending=true;
+  turnSwitchPending = true;
 });
 
 // DRAW AIM
@@ -408,13 +408,12 @@ function updatePiece(piece) {
   }
 }
 
-
 function resetStriker(piece, isBottom) {
   piece.vx = 0;
   piece.vy = 0;
 
   piece.x = cx;
-  piece.y = isBottom ? bottomWall - 100 : topWall + 60;
+  piece.y = isBottom ? bottomWall - 80 : topWall + 60;
 }
 
 function updateGame() {
@@ -470,72 +469,87 @@ gameLoop();
 
 // --- PLAYER DATA ---
 
-
 function drawPlayerProfiles() {
-    const cardWidth = 155; 
-    const cardHeight = 65;
-    const padding = 25;
-    const edgeSafety = 5; // Forces distance from canvas walls
+  const cardWidth = 145;
+  const cardHeight = 65;
+  const padding = 25;
+  const edgeSafety = 5; // Forces distance from canvas walls
 
-    const profiles = [
-        { 
-            p: player1, 
-            // Calculated X with a safety check to prevent left-side cutting
-            x: Math.max(edgeSafety, boardX - cardWidth - padding), 
-            y: boardY + boardHeight - cardHeight,
-        },
-        { 
-            p: player2, 
-            // Calculated X with a safety check to prevent right-side cutting
-            x: Math.min(canvas.width - cardWidth - edgeSafety, boardX + boardWidth + padding), 
-            y: boardY, 
-        }
-    ];
+  const profiles = [
+    {
+      p: player1,
+      turn: "bottom",
+      x: Math.max(edgeSafety, boardX - cardWidth - padding),
+      y: boardY + boardHeight - cardHeight,
+    },
+    {
+      p: player2,
+      turn: "top",
+      x: Math.min(
+        canvas.width - cardWidth - edgeSafety,
+        boardX + boardWidth + padding,
+      ),
+      y: boardY,
+    },
+  ];
 
-    profiles.forEach(profile => {
-        const { p, x, y } = profile;
+  profiles.forEach((profile) => {
+    const { p, x, y } = profile;
+    const isActive = currentTurn === profile.turn;
 
-        ctx.save();
-        
-        // --- 1. THE CARD BODY ---
-        ctx.beginPath();
-        ctx.roundRect(x, y, cardWidth, cardHeight, 12);
-        
-        // Solid dark background for professional look
-        ctx.fillStyle = "#111111"; 
-        ctx.fill();
+    ctx.save();
 
-        // --- 2. THE NON-CUTTING STROKE ---
-        // We draw the stroke slightly INSIDE the box (x+1, y+1) 
-        // with a smaller width/height to ensure no edges are clipped
-        ctx.strokeStyle = p.color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.roundRect(x + 1, y + 1, cardWidth - 2, cardHeight - 2, 11);
-        ctx.stroke();
+    // --- 1. THE CARD BODY ---
+    ctx.beginPath();
+    ctx.roundRect(x, y, cardWidth, cardHeight, 12);
 
-        // --- 3. TEXT RENDERING ---
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+    // ACTIVE PLAYER GLOW
+    if (isActive) {
+      ctx.shadowColor = p.color;
+      ctx.shadowBlur = 18;
+      ctx.fillStyle = "#1b1b1b";
+    } else {
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = "#111111";
+    }
 
-        // Player Name (Top half)
-        ctx.fillStyle = "#FFFFFF";
-        ctx.font = "bold 14px Arial, sans-serif";
-        ctx.fillText(p.name, x + cardWidth / 2, y + 22);
+    ctx.fill();
 
-        // Professional Divider
-        ctx.strokeStyle = "rgba(255,255,255,0.15)";
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + 15, y + 34);
-        ctx.lineTo(x + cardWidth - 15, y + 34);
-        ctx.stroke();
+    // --- 2. BORDER ---
+    ctx.strokeStyle = isActive ? "#ffffff" : p.color;
+    ctx.lineWidth = isActive ? 3 : 2;
 
-        // Score (Bottom half)
-        ctx.fillStyle = p.color;
-        ctx.font = "bold 18px Arial, sans-serif";
-       ctx.fillText("SCORE: " + (p.score !== undefined ? p.score.toString().padStart(2, '0') : "00"), x + cardWidth / 2, y + 48);
-        
-        ctx.restore();
-    });
+    ctx.beginPath();
+    ctx.roundRect(x + 1, y + 1, cardWidth - 2, cardHeight - 2, 11);
+    ctx.stroke();
+
+    // --- 3. TEXT RENDERING ---
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    // Player Name (Top half)
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "bold 14px Arial, sans-serif";
+    ctx.fillText(p.name, x + cardWidth / 2, y + 22);
+
+    // Professional Divider
+    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + 15, y + 34);
+    ctx.lineTo(x + cardWidth - 15, y + 34);
+    ctx.stroke();
+
+    // Score (Bottom half)
+    ctx.fillStyle = p.color;
+    ctx.font = "bold 18px Arial, sans-serif";
+    ctx.fillText(
+      "SCORE: " +
+        (p.score !== undefined ? p.score.toString().padStart(2, "0") : "00"),
+      x + cardWidth / 2,
+      y + 48,
+    );
+
+    ctx.restore();
+  });
 }
