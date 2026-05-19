@@ -1,5 +1,7 @@
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
+const player1 = { name: "PLAYER 1", score: 0, color: "#ed7c0b" };
+const player2 = { name: "PLAYER 2", score: 0, color: "#ed7c0b" };
 
 const board = new Image();
 board.src = "assets/board.jpeg";
@@ -101,74 +103,52 @@ function draw() {
   // DRAW COINS
   for (let coin of coins) {
     ctx.beginPath();
-
     ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
-
     ctx.fillStyle = coin.color;
-
     ctx.fill();
-
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
-
     ctx.stroke();
 
     // INNER RING
     ctx.beginPath();
-
     ctx.arc(coin.x, coin.y, coin.radius * 0.7, 0, Math.PI * 2);
-
     ctx.strokeStyle = coin.color === "white" ? "#ddd" : "#555";
-
     ctx.stroke();
-    drawPlayerProfiles();
   }
+
   // DRAW BOTTOM STRIKER
   ctx.beginPath();
-
   ctx.arc(striker.x, striker.y, striker.radius, 0, Math.PI * 2);
-
   ctx.fillStyle = striker.color;
-
   ctx.fill();
-
   ctx.lineWidth = 2;
-
   ctx.strokeStyle = "black";
-
   ctx.stroke();
 
-  //INNER RING
+  // INNER RING
   ctx.beginPath();
-
   ctx.arc(striker.x, striker.y, striker.radius * 0.7, 0, Math.PI * 2);
-
   ctx.strokeStyle = striker.color === "white" ? "#ddd" : "#b64f0a";
-
   ctx.stroke();
 
   // DRAW TOP STRIKER
   ctx.beginPath();
-
   ctx.arc(topStriker.x, topStriker.y, topStriker.radius, 0, Math.PI * 2);
-
   ctx.fillStyle = topStriker.color;
-
   ctx.fill();
-
   ctx.lineWidth = 2;
-
   ctx.strokeStyle = "black";
-
   ctx.stroke();
 
+  // INNER RING
   ctx.beginPath();
-
   ctx.arc(topStriker.x, topStriker.y, topStriker.radius * 0.7, 0, Math.PI * 2);
-
   ctx.strokeStyle = topStriker.color === "white" ? "#ddd" : "#b64f0a";
-
   ctx.stroke();
+
+  // DRAW PLAYER PROFILES
+  drawPlayerProfiles();
 }
 
 // LOAD BOARD
@@ -200,11 +180,12 @@ canvas.addEventListener("mousedown", function (e) {
 
   let topDistance = Math.sqrt(dxTop * dxTop + dyTop * dyTop);
 
-  if (distance < striker.radius) {
+  // Only allow dragging if it matches the current player's turn
+  if (distance < striker.radius && currentTurn === "bottom") {
     draggingBottom = true;
   }
 
-  if (topDistance < topStriker.radius) {
+  if (topDistance < topStriker.radius && currentTurn === "top") {
     draggingTop = true;
   }
 });
@@ -244,25 +225,18 @@ canvas.addEventListener("mousemove", function (e) {
 });
 
 //  AIMING SYSTEM
-
 const aimState = {
-  bottom: {
-    aiming: false,
-    aimX: 0,
-    aimY: 0,
-    power: 0,
-  },
-  top: {
-    aiming: false,
-    aimX: 0,
-    aimY: 0,
-    power: 0,
-  },
+  bottom: { aiming: false, aimX: 0, aimY: 0, power: 0 },
+  top: { aiming: false, aimX: 0, aimY: 0, power: 0 },
 };
 
-let activeAiming = null; // "bottom" or "top"
+let activeAiming = null; 
 const MAX_POWER = 90;
+
 let strikerReturned = false;
+let topStrikerReturned = false;
+let currentTurn = "bottom";
+let turnSwitchPending = false;
 
 // RIGHT CLICK TO START AIMING
 
@@ -288,9 +262,10 @@ canvas.addEventListener("mousedown", function (e) {
   const bottomDist = check(striker);
   const topDist = check(topStriker);
 
-  if (bottomDist < 80) {
+  // Enforce turn restrictions when initiating aim
+  if (bottomDist < 80 && currentTurn === "bottom") {
     activeAiming = "bottom";
-  } else if (topDist < 80) {
+  } else if (topDist < 80 && currentTurn === "top") {
     activeAiming = "top";
   } else {
     return;
@@ -347,6 +322,7 @@ canvas.addEventListener("click", function () {
 
   strikerReturned = false;
   topStrikerReturned = false;
+  turnSwitchPending=true;
 });
 
 // DRAW AIM
@@ -432,7 +408,6 @@ function updatePiece(piece) {
   }
 }
 
-let topStrikerReturned = false;
 
 function resetStriker(piece, isBottom) {
   piece.vx = 0;
@@ -446,15 +421,23 @@ function updateGame() {
   updatePiece(striker);
   updatePiece(topStriker);
 
-  // reset only bottom striker (if you want asymmetry)
-  if (strikerStopped() && !strikerReturned) {
+  // Check if BOTH strikers have completely stopped moving
+  const everythingStopped = strikerStopped() && topStrikerStopped();
+
+  // If a shot was fired and all pieces have come to a stop
+  if (everythingStopped && turnSwitchPending) {
+    // 1. Reset striker positions back to their starting lines
     resetStriker(striker, true);
     strikerReturned = true;
-  }
 
-  if (topStrikerStopped() && !topStrikerReturned) {
     resetStriker(topStriker, false);
     topStrikerReturned = true;
+
+    // 2. Switch the active player turn
+    currentTurn = currentTurn === "bottom" ? "top" : "bottom";
+
+    // 3. Clear the flag so it waits for the next shot
+    turnSwitchPending = false;
   }
 }
 
@@ -483,9 +466,10 @@ function gameLoop() {
 }
 
 gameLoop();
+// --- PLACE THE NEW TURN MANAGEMENT VARIABLES HERE ---
+
 // --- PLAYER DATA ---
-const player1 = { name: "PLAYER 1", score: 0, color: "#ed7c0b" };
-const player2 = { name: "PLAYER 2", score: 0, color: "#ed7c0b" };
+
 
 function drawPlayerProfiles() {
     const cardWidth = 155; 
@@ -550,7 +534,7 @@ function drawPlayerProfiles() {
         // Score (Bottom half)
         ctx.fillStyle = p.color;
         ctx.font = "bold 18px Arial, sans-serif";
-        ctx.fillText("SCORE: " + p.score.toString().padStart(2, '0'), x + cardWidth / 2, y + 48);
+       ctx.fillText("SCORE: " + (p.score !== undefined ? p.score.toString().padStart(2, '0') : "00"), x + cardWidth / 2, y + 48);
         
         ctx.restore();
     });
