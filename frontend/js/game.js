@@ -30,6 +30,11 @@ class Coin {
     this.y = y;
     this.radius = radius;
     this.color = color;
+
+    this.vx = 0;
+    this.vy = 0;
+
+    this.mass = 1;
   }
 }
 
@@ -45,6 +50,7 @@ const striker = {
   color: "#ed7c0b",
   vx: 0,
   vy: 0,
+  mass: 2,
 };
 
 // TOP STRIKER
@@ -55,11 +61,11 @@ const topStriker = {
   color: "#ed7c0b",
   vx: 0,
   vy: 0,
+  mass: 2,
 };
 
 function createCoins() {
-  const h = r * Math.sqrt(3);
-
+  const h = r * Math.sqrt(3) + 1.5;
   const pos = [
     // CENTER QUEEN
     { x: cx, y: cy, color: "#f60a0a" },
@@ -117,35 +123,45 @@ function draw() {
     ctx.stroke();
   }
 
-  // DRAW BOTTOM STRIKER
-  ctx.beginPath();
-  ctx.arc(striker.x, striker.y, striker.radius, 0, Math.PI * 2);
-  ctx.fillStyle = striker.color;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "black";
-  ctx.stroke();
+  // --- DRAW BOTTOM STRIKER (Only if it's bottom's turn) ---
+  if (currentTurn === "bottom") {
+    ctx.beginPath();
+    ctx.arc(striker.x, striker.y, striker.radius, 0, Math.PI * 2);
+    ctx.fillStyle = striker.color;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "black";
+    ctx.stroke();
 
-  // INNER RING
-  ctx.beginPath();
-  ctx.arc(striker.x, striker.y, striker.radius * 0.7, 0, Math.PI * 2);
-  ctx.strokeStyle = striker.color === "white" ? "#ddd" : "#b64f0a";
-  ctx.stroke();
+    // INNER RING
+    ctx.beginPath();
+    ctx.arc(striker.x, striker.y, striker.radius * 0.7, 0, Math.PI * 2);
+    ctx.strokeStyle = striker.color === "white" ? "#ddd" : "#b64f0a";
+    ctx.stroke();
+  }
 
-  // DRAW TOP STRIKER
-  ctx.beginPath();
-  ctx.arc(topStriker.x, topStriker.y, topStriker.radius, 0, Math.PI * 2);
-  ctx.fillStyle = topStriker.color;
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "black";
-  ctx.stroke();
+  // --- DRAW TOP STRIKER (Only if it's top's turn) ---
+  if (currentTurn === "top") {
+    ctx.beginPath();
+    ctx.arc(topStriker.x, topStriker.y, topStriker.radius, 0, Math.PI * 2);
+    ctx.fillStyle = topStriker.color;
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "black";
+    ctx.stroke();
 
-  // INNER RING
-  ctx.beginPath();
-  ctx.arc(topStriker.x, topStriker.y, topStriker.radius * 0.7, 0, Math.PI * 2);
-  ctx.strokeStyle = topStriker.color === "white" ? "#ddd" : "#b64f0a";
-  ctx.stroke();
+    // INNER RING
+    ctx.beginPath();
+    ctx.arc(
+      topStriker.x,
+      topStriker.y,
+      topStriker.radius * 0.7,
+      0,
+      Math.PI * 2,
+    );
+    ctx.strokeStyle = topStriker.color === "white" ? "#ddd" : "#b64f0a";
+    ctx.stroke();
+  }
 
   // DRAW PLAYER PROFILES
   drawPlayerProfiles();
@@ -300,7 +316,7 @@ canvas.addEventListener("mousemove", function (e) {
 });
 
 // LEFT CLICK TO SHOOT
-canvas.addEventListener("click", function () {
+document.addEventListener("click", function () {
   if (!activeAiming) return;
 
   const state = aimState[activeAiming];
@@ -408,40 +424,125 @@ function updatePiece(piece) {
   }
 }
 
+function resolveCollision(a, b) {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+
+  // Calculate squared distance (skipping the slow Math.sqrt)
+  const distanceSq = dx * dx + dy * dy;
+  const minDistance = a.radius + b.radius;
+
+  // Broad-phase check using multiplication instead of square root
+  if (distanceSq >= minDistance * minDistance) return;
+
+  // Real collision confirmed: Now compute actual distance for resolution
+  const distance = Math.sqrt(distanceSq);
+
+  // Prevent division by zero if pieces are perfectly overlapping
+  if (distance === 0) return;
+
+  // NORMAL UNIT VECTORS
+  const nx = dx / distance;
+  const ny = dy / distance;
+
+  // SEPARATE OBJECTS SLIGHTLY (Positional Correction)
+  const overlap = minDistance - distance;
+  const separationFactor = 0.5; // Distribute correction evenly
+
+  a.x -= nx * overlap * separationFactor;
+  a.y -= ny * overlap * separationFactor;
+
+  b.x += nx * overlap * separationFactor;
+  b.y += ny * overlap * separationFactor;
+
+  // RELATIVE VELOCITY
+  const dvx = a.vx - b.vx;
+  const dvy = a.vy - b.vy;
+
+  // VELOCITY ALONG NORMAL
+  const impactSpeed = dvx * nx + dvy * ny;
+
+  // ALREADY MOVING APART
+  if (impactSpeed < 0) return;
+
+  // ELASTICITY
+  const restitution = 0.85;
+
+  // IMPULSE SCALAR (Account for masses)
+  const impulse = (2 * impactSpeed) / (a.mass + b.mass);
+
+  a.vx -= impulse * b.mass * nx * restitution;
+  a.vy -= impulse * b.mass * ny * restitution;
+
+  b.vx += impulse * a.mass * nx * restitution;
+  b.vy += impulse * a.mass * ny * restitution;
+}
+
 function resetStriker(piece, isBottom) {
   piece.vx = 0;
   piece.vy = 0;
-
   piece.x = cx;
   piece.y = isBottom ? bottomWall - 80 : topWall + 60;
 }
 
 function updateGame() {
-  updatePiece(striker);
-  updatePiece(topStriker);
+  // 1. Identify and update ONLY the active striker and coins
+  const activeStriker = currentTurn === "bottom" ? striker : topStriker;
 
-  // Check if BOTH strikers have completely stopped moving
-  const everythingStopped = strikerStopped() && topStrikerStopped();
+  updatePiece(activeStriker);
+  for (let coin of coins) {
+    updatePiece(coin);
+  }
 
-  // If a shot was fired and all pieces have come to a stop
+  // 2. COLLISION: Active Striker ↔ Coins
+  for (let coin of coins) {
+    resolveCollision(activeStriker, coin);
+  }
+
+  // 3. COLLISION: Coin ↔ Coin (Optimized)
+  for (let i = 0; i < coins.length; i++) {
+    const coinA = coins[i];
+    const coinAIsMoving = coinA.vx !== 0 || coinA.vy !== 0;
+
+    for (let j = i + 1; j < coins.length; j++) {
+      const coinB = coins[j];
+      if (coinAIsMoving || coinB.vx !== 0 || coinB.vy !== 0) {
+        resolveCollision(coinA, coinB);
+      }
+    }
+  }
+
+  // 4. TURN RESET MECHANISM
+  const everythingStopped =
+    strikerStopped() && topStrikerStopped() && coinsStopped();
+
   if (everythingStopped && turnSwitchPending) {
-    // 1. Reset striker positions back to their starting lines
+    // Reset BOTH to their baselines behind the scenes
     resetStriker(striker, true);
     strikerReturned = true;
 
     resetStriker(topStriker, false);
     topStrikerReturned = true;
 
-    // 2. Switch the active player turn
+    // Flip the turn identity (This will instantly change which one is drawn)
     currentTurn = currentTurn === "bottom" ? "top" : "bottom";
 
-    // 3. Clear the flag so it waits for the next shot
     turnSwitchPending = false;
   }
 }
 
 function strikerStopped() {
   return Math.abs(striker.vx) < 0.05 && Math.abs(striker.vy) < 0.05;
+}
+
+function coinsStopped() {
+  for (let coin of coins) {
+    if (Math.abs(coin.vx) > 0.05 || Math.abs(coin.vy) > 0.05) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function topStrikerStopped() {
