@@ -63,6 +63,7 @@ class Coin {
     this.vy = 0;
     this.mass = 1;
 
+    // Memory snapshots for absolute rollbacks
     this.snapshotX = x;
     this.snapshotY = y;
   }
@@ -148,6 +149,7 @@ function draw() {
     ctx.stroke();
   }
 
+  // DRAW GLOW, SHRINKING PIECES, AND SCORE POPUPS
   drawPocketAnimations();
 
   // DRAW BOTTOM STRIKER
@@ -190,33 +192,18 @@ function draw() {
 
   drawPlayerProfiles();
 
-  // WARNING OVERLAY — fires for both players when aiming into their
-  // own restricted baseline strip
+  // Show Warning Overlay text if line currently aims through a restricted zone piece
   const currentState = aimState[currentTurn];
   if (currentState.aiming && currentState.isTargetingBlocked) {
-    // Determine vertical position: show warning near shooter's side
-
-    const warningY =
-      currentTurn === "bottom"
-        ? bottomWall - 115 // above bottom player
-        : topWall + 100; // below top player (same relative distance)
-
     ctx.save();
-
-    // Pulsing red background pill for maximum visibility
-    ctx.fillStyle = "rgba(200, 0, 0, 0.82)";
-    ctx.beginPath();
-    const warnText = "⚠️ RESTRICTED ZONE — USE WALL REBOUNDS!";
-    ctx.font = "bold 13px Arial";
-    const tw = ctx.measureText(warnText).width;
-    const pillX = canvas.width / 2 - tw / 2 - 12;
-    const pillW = tw + 24;
-    ctx.roundRect(pillX, warningY - 18, pillW, 26, 8);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 13px Arial";
+    ctx.fillStyle = "rgba(240, 10, 10, 0.95)";
+    ctx.font = "bold 15px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(warnText, canvas.width / 2, warningY);
+    ctx.fillText(
+      "⚠️ ILLEGAL DIRECT HIT! USE REBOUND WALLL SHOTS",
+      canvas.width / 2,
+      currentTurn === "bottom" ? bottomWall - 115 : topWall + 100,
+    );
     ctx.restore();
   }
 }
@@ -442,38 +429,33 @@ canvas.addEventListener("mousedown", function (e) {
 const RAD_20 = (20 * Math.PI) / 180;
 const RAD_160 = (160 * Math.PI) / 180;
 
-function isCoinInRestrictedZone(coin, shooterSide) {
-  // Increase these offset values to match the actual position
-  // of the yellow markings in your game board image.
-  const verticalOffset = 130;
+// HELPER: Check if a coin is sitting in the active player's arrow loop areas
+function isCoinInRestrictedZone(coin, side) {
+  if (side === "bottom") {
+    // Left Loop Boundary
+    const blDx = coin.x - (leftWall + 68);
+    const blDy = coin.y - (bottomWall - 62);
+    if (Math.sqrt(blDx * blDx + blDy * blDy) < 36) return true;
 
-  const horizontalOffset = 100;
+    // Right Loop Boundary
+    const brDx = coin.x - (rightWall - 68);
+    const brDy = coin.y - (bottomWall - 62);
+    if (Math.sqrt(brDx * brDx + brDy * brDy) < 36) return true;
+  } else {
+    // Top-Left Loop Boundary
+    const tlDx = coin.x - (leftWall + 68);
+    const tlDy = coin.y - (topWall + 62);
+    if (Math.sqrt(tlDx * tlDx + tlDy * tlDy) < 36) return true;
 
-  const zones =
-    shooterSide === "bottom"
-      ? [
-          { x: leftWall + horizontalOffset, y: bottomWall - verticalOffset },
-
-          { x: rightWall - horizontalOffset, y: bottomWall - verticalOffset },
-        ]
-      : [
-          { x: leftWall + horizontalOffset, y: topWall + verticalOffset },
-
-          { x: rightWall - horizontalOffset, y: topWall + verticalOffset },
-        ];
-
-  // Increase the radius slightly to ensure the check covers the full yellow area
-
-  const zoneRadius = 45;
-
-  for (let zone of zones) {
-    const dist = Math.hypot(coin.x - zone.x, coin.y - zone.y);
-
-    if (dist < zoneRadius) return true;
+    // Top-Right Loop Boundary
+    const trDx = coin.x - (rightWall - 68);
+    const trDy = coin.y - (topWall + 62);
+    if (Math.sqrt(trDx * trDx + trDy * trDy) < 36) return true;
   }
   return false;
 }
 
+// HELPER: Raycast logic to see if aiming vector hits a specific coin directly
 function isAimIntersectingCoin(strikerRef, angle, coin) {
   const rx = Math.cos(angle);
   const ry = Math.sin(angle);
@@ -490,9 +472,11 @@ function isAimIntersectingCoin(strikerRef, angle, coin) {
     (coin.x - closestX) * (coin.x - closestX) +
     (coin.y - closestY) * (coin.y - closestY);
 
-  // Tight: just coin radius + 2px grace, no striker radius added
-  const collisionRadius = coin.radius + 2;
-  return distSq < collisionRadius * collisionRadius;
+  return (
+    distSq <
+    (coin.radius + strikerRef.radius + 3) *
+      (coin.radius + strikerRef.radius + 3)
+  );
 }
 
 canvas.addEventListener("mousemove", function (e) {
@@ -530,21 +514,11 @@ canvas.addEventListener("mousemove", function (e) {
     state.constrainedAngle = downwardAngle;
   }
 
-  // ---------------------------------------------------------------
-  // Check every coin: if ANY coin in shooter's restricted zone is
-  // directly on the shot ray → flag as blocked for BOTH players.
-  // ---------------------------------------------------------------
-  // REPLACE THIS BLOCK IN YOUR MOUSEMOVE LISTENER
+  // Pre-calculate if this ray line creates an illegal direct strike foul path
   state.isTargetingBlocked = false;
   for (let coin of coins) {
     if (isCoinInRestrictedZone(coin, activeAiming)) {
-      // INCREASE THE RADIUS HERE: Use (coin.radius + 10) or more
-      // to make the warning fire more reliably
-      const collisionRadius = coin.radius + 12;
-      // Use a temporary wider check for the warning
-      if (
-        isAimNearCoin(strikerRef, state.constrainedAngle, coin, collisionRadius)
-      ) {
+      if (isAimIntersectingCoin(strikerRef, state.constrainedAngle, coin)) {
         state.isTargetingBlocked = true;
         break;
       }
@@ -567,8 +541,7 @@ document.addEventListener("click", function () {
   const angle = state.constrainedAngle;
   const speed = state.power * 0.22;
 
-  // Snapshot BEFORE applying forces so we can fully revert on foul
-
+  // 1. MEMORY SNAPSHOT EVERYTHING BEFORE APPLIYING FORCES
   shotViolatedDirectHitRule = state.isTargetingBlocked;
 
   preShotBoardSnapshot = coins.map((c) => ({
@@ -583,7 +556,7 @@ document.addEventListener("click", function () {
   preShotPlayer1Coins = { ...player1.coinsPocketed };
   preShotPlayer2Coins = { ...player2.coinsPocketed };
 
-  // Launch physics
+  // 2. LAUNCH PHYSICS
   strikerRef.vx = Math.cos(angle) * speed;
   strikerRef.vy = Math.sin(angle) * speed;
 
@@ -599,60 +572,166 @@ document.addEventListener("click", function () {
   strikerPocketedThisTurn = false;
   topStrikerPocketedThisTurn = false;
 });
-
-function isAimNearCoin(strikerRef, angle, coin, radius) {
-  const rx = Math.cos(angle);
-  const ry = Math.sin(angle);
-  const cx_val = coin.x - strikerRef.x;
-  const cy_val = coin.y - strikerRef.y;
-  const projection = cx_val * rx + cy_val * ry;
-  if (projection < 0) return false;
-  const closestX = strikerRef.x + rx * projection;
-  const closestY = strikerRef.y + ry * projection;
-  const distSq = (coin.x - closestX) ** 2 + (coin.y - closestY) ** 2;
-  return distSq < radius * radius;
-}
-
 function drawAimFor(strikerRef, state) {
   if (currentTurn === "bottom" && strikerPocketedThisTurn) return;
   if (currentTurn === "top" && topStrikerPocketedThisTurn) return;
 
+  ctx.save();
+
+  // ==========================================
+  // 1. MATHEMATICAL SETUP & STRICT PROPORTIONAL SIZES
+  // ==========================================
   const angle = state.constrainedAngle;
-  const aimLength = 25 + state.power * 0.55;
+  const dx = Math.cos(angle);
+  const dy = Math.sin(angle);
 
-  const endX = strikerRef.x + Math.cos(angle) * aimLength;
-  const endY = strikerRef.y + Math.sin(angle) * aimLength;
+  // Hard cap on power calculation to keep things professional
+  const maxClampedPower = Math.min(state.power, 65);
 
-  let limitedEndX = Math.max(leftWall, Math.min(rightWall, endX));
-  let limitedEndY = Math.max(topWall, Math.min(bottomWall, endY));
+  // FIX: Tightened the circle scaling factor (0.4) so it matches the power perfectly without ballooning
+  const circleRadius = 24 + maxClampedPower * 0.4; 
+  
+  // Forward path length remains tight and proportional
+  const forwardPathLength = 50 + maxClampedPower * 0.65;
 
+  // Coordinate positions along the shot vector
+  const arrowBaseX = strikerRef.x + dx * (circleRadius - 16); 
+  const arrowTipX = strikerRef.x + dx * circleRadius;         
+  const arrowBaseY = strikerRef.y + dy * (circleRadius - 16);
+  const arrowTipY = strikerRef.y + dy * circleRadius;
+
+  // ==========================================
+  // 2. DRAW THE LARGE BACKWARD/DRAG CIRCLE
+  // ==========================================
   ctx.beginPath();
-  ctx.moveTo(strikerRef.x, strikerRef.y);
-  ctx.lineTo(limitedEndX, limitedEndY);
-
+  ctx.arc(strikerRef.x, strikerRef.y, circleRadius, 0, Math.PI * 2);
+  ctx.setLineDash([2, 4]); 
   ctx.strokeStyle = state.isTargetingBlocked
-    ? "rgba(255, 0, 0, 0.95)"
-    : "rgba(255,255,255,0.95)";
-  ctx.lineWidth = 4;
+    ? "rgba(220, 50, 50, 0.3)"
+    : "rgba(0, 0, 0, 0.15)"; 
+  ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  const arrowAngle = Math.atan2(
-    limitedEndY - strikerRef.y,
-    limitedEndX - strikerRef.x,
-  );
-  const arrowSize = 14;
-  const x1 = limitedEndX - arrowSize * Math.cos(arrowAngle - Math.PI / 6);
-  const y1 = limitedEndY - arrowSize * Math.sin(arrowAngle - Math.PI / 6);
-  const x2 = limitedEndX - arrowSize * Math.cos(arrowAngle + Math.PI / 6);
-  const y2 = limitedEndY - arrowSize * Math.sin(arrowAngle + Math.PI / 6);
+  // ==========================================
+  // 3. DRAW THE BACKWARD DOTTED TRAIL
+  // ==========================================
+  ctx.beginPath();
+  ctx.moveTo(strikerRef.x, strikerRef.y);
+  ctx.lineTo(strikerRef.x - dx * circleRadius, strikerRef.y - dy * circleRadius);
+  ctx.setLineDash([2, 5]);
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // ==========================================
+  // 4. DRAW THE STICK / SHAFT HOLDING THE ARROW
+  // ==========================================
+  ctx.beginPath();
+  ctx.moveTo(strikerRef.x, strikerRef.y);
+  ctx.lineTo(arrowBaseX, arrowBaseY);
+  
+  ctx.setLineDash([]); 
+  ctx.lineWidth = 4;  
+  ctx.strokeStyle = state.isTargetingBlocked ? "#cc2222" : "#e65100";
+  ctx.lineCap = "round";
+  ctx.stroke();
+
+  // Thin background outline for the stick shaft
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
+  ctx.globalCompositeOperation = "destination-over"; 
+  ctx.stroke();
+  ctx.globalCompositeOperation = "source-over";      
+
+  // ==========================================
+  // 5. DRAW THE SOLID GRADIENT ARROWHEAD
+  // ==========================================
+  const arrowheadWidth = 6; 
+  const sideAngleX = Math.cos(angle + Math.PI / 2);
+  const sideAngleY = Math.sin(angle + Math.PI / 2);
+
+  const baseLeftX = arrowBaseX + sideAngleX * arrowheadWidth;
+  const baseLeftY = arrowBaseY + sideAngleY * arrowheadWidth;
+  const baseRightX = arrowBaseX - sideAngleX * arrowheadWidth;
+  const baseRightY = arrowBaseY - sideAngleY * arrowheadWidth;
 
   ctx.beginPath();
-  ctx.moveTo(limitedEndX, limitedEndY);
-  ctx.lineTo(x1, y1);
-  ctx.lineTo(x2, y2);
+  ctx.moveTo(baseLeftX, baseLeftY);
+  ctx.lineTo(arrowTipX, arrowTipY); 
+  ctx.lineTo(baseRightX, baseRightY);
   ctx.closePath();
-  ctx.fillStyle = state.isTargetingBlocked ? "#ff0000" : strikerRef.color;
+
+  const arrowGrad = ctx.createLinearGradient(arrowBaseX, arrowBaseY, arrowTipX, arrowTipY);
+  if (state.isTargetingBlocked) {
+    arrowGrad.addColorStop(0, "#ff3333");
+    arrowGrad.addColorStop(1, "#990000");
+  } else {
+    arrowGrad.addColorStop(0, "#e65100"); 
+    arrowGrad.addColorStop(0.5, "#ffb300"); 
+    arrowGrad.addColorStop(1, "#fff200"); 
+  }
+  ctx.fillStyle = arrowGrad;
   ctx.fill();
+
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // ==========================================
+  // 6. DRAW THE REFINED SMALLER FORWARD DOTS
+  // ==========================================
+  let currentX = arrowTipX;
+  let currentY = arrowTipY;
+  let runDx = dx;
+  let runDy = dy;
+  
+  let distanceTravelled = 0;
+  const stepSize = 12; 
+
+  while (distanceTravelled < forwardPathLength) {
+    currentX += runDx * stepSize;
+    currentY += runDy * stepSize;
+    distanceTravelled += stepSize;
+
+    let bounced = false;
+    if (currentX - strikerRef.radius <= leftWall) {
+      currentX = leftWall + strikerRef.radius;
+      runDx *= -1;
+      bounced = true;
+    } else if (currentX + strikerRef.radius >= rightWall) {
+      currentX = rightWall - strikerRef.radius;
+      runDx *= -1;
+      bounced = true;
+    }
+
+    if (currentY - strikerRef.radius <= topWall) {
+      currentY = topWall + strikerRef.radius;
+      runDy *= -1;
+      bounced = true;
+    } else if (currentY + strikerRef.radius >= bottomWall) {
+      currentY = bottomWall - strikerRef.radius;
+      runDy *= -1;
+      bounced = true;
+    }
+
+    // FIX: Reduced dot radius sizing rules to make them look much smaller, subtle, and clean
+    const progressRatio = distanceTravelled / forwardPathLength;
+    const dotRadius = 1.2 + (progressRatio * 1.0); 
+
+    ctx.beginPath();
+    ctx.arc(currentX, currentY, dotRadius, 0, Math.PI * 2);
+    
+    if (state.isTargetingBlocked) {
+      ctx.fillStyle = "rgba(255, 60, 60, 0.9)";
+    } else {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+      ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
+      ctx.shadowBlur = 1;
+    }
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 function updatePiece(piece) {
@@ -869,26 +948,29 @@ function updateGame() {
     strikerReturned = true;
     resetStriker(topStriker, false);
     topStrikerReturned = true;
-    // FOUL: illegal direct-hit into restricted zone
-    // Revert board + scores, pass turn to opponent
-    if (shotViolatedDirectHitRule) {
-      // Fully restore board to pre-shot state
 
+    // ==========================================================
+    // CRITICAL FIX: BOARD POSITION ROLLBACK ZONE ON DIRECT FOUL
+    // ==========================================================
+    if (shotViolatedDirectHitRule) {
+      // Re-populate the whole active coins collection from pristine saved states
       coins = preShotBoardSnapshot.map((snap) => {
         let restoredCoin = new Coin(snap.x, snap.y, snap.radius, snap.color);
         restoredCoin.vx = 0;
         restoredCoin.vy = 0;
         return restoredCoin;
       });
+
+      // Restore exact statistical numerical metrics
       player1.score = preShotPlayer1Score;
       player2.score = preShotPlayer2Score;
       player1.coinsPocketed = { ...preShotPlayer1Coins };
       player2.coinsPocketed = { ...preShotPlayer2Coins };
 
-      // Always pass turn on a restricted-zone foul
+      // Switch turns immediately (The player loses their round entirely)
       currentTurn = currentTurn === "bottom" ? "top" : "bottom";
     } else {
-      // Normal round resolution
+      // Execute normal legitimate carrom round scoring updates
       const activePlayer = currentTurn === "bottom" ? player1 : player2;
       const currentStrikerFouled =
         currentTurn === "bottom"
@@ -916,7 +998,7 @@ function updateGame() {
       }
     }
 
-    // Clean tracking flags
+    // Clean flag containers
     strikerPocketedThisTurn = false;
     topStrikerPocketedThisTurn = false;
     turnSwitchPending = false;
