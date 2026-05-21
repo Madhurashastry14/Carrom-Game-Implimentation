@@ -572,7 +572,6 @@ document.addEventListener("click", function () {
   strikerPocketedThisTurn = false;
   topStrikerPocketedThisTurn = false;
 });
-
 function drawAimFor(strikerRef, state) {
   if (currentTurn === "bottom" && strikerPocketedThisTurn) return;
   if (currentTurn === "top" && topStrikerPocketedThisTurn) return;
@@ -734,6 +733,7 @@ function drawAimFor(strikerRef, state) {
 
   ctx.restore();
 }
+
 function updatePiece(piece) {
   piece.x += piece.vx;
   piece.y += piece.vy;
