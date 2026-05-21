@@ -1,9 +1,7 @@
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
-// ===================================================================
 // 1. PLAYER OBJECTS
-// ===================================================================
 const player1 = {
   name: "PLAYER 1",
   score: 0,
@@ -21,30 +19,21 @@ const player2 = {
 const board = new Image();
 board.src = "assets/board.jpeg";
 
-// BOARD SIZE
 const boardWidth = 480;
 const boardHeight = 480;
 
-// CENTER BOARD
 const boardX = (canvas.width - boardWidth) / 2;
 const boardY = (canvas.height - boardHeight) / 2;
 
-// BOARD WALLS
 const leftWall = boardX + 20;
 const rightWall = boardX + boardWidth - 20;
 const topWall = boardY + 20;
 const bottomWall = boardY + boardHeight - 38;
 
-// BOARD CENTER
 const cx = boardX + boardWidth / 2 + 2;
 const cy = boardY + boardHeight / 2 - 27;
 
-// ANIMATION CONTAINER FOR POCKETED COINS & FLOATING TEXT
 const pocketedAnimations = [];
-
-// ===================================================================
-// POCKET BOUNDS CONFIGURATION
-// ===================================================================
 const pockets = [
   { x: leftWall + 15, y: topWall + 15 }, // Top Left
   { x: rightWall - 15, y: topWall + 15 }, // Top Right
@@ -62,8 +51,6 @@ class Coin {
     this.vx = 0;
     this.vy = 0;
     this.mass = 1;
-
-    // Memory snapshots for absolute rollbacks
     this.snapshotX = x;
     this.snapshotY = y;
   }
@@ -72,7 +59,6 @@ class Coin {
 let coins = [];
 const r = 12;
 
-// BOTTOM STRIKER
 const striker = {
   x: cx,
   y: bottomWall - 80,
@@ -83,7 +69,6 @@ const striker = {
   mass: 2,
 };
 
-// TOP STRIKER
 const topStriker = {
   x: cx,
   y: topWall + 60,
@@ -93,14 +78,13 @@ const topStriker = {
   vy: 0,
   mass: 2,
 };
+let gameOver = false;
 
 function createCoins() {
   const h = r * Math.sqrt(3) + 1.5;
   const pos = [
-    // CENTER QUEEN
     { x: cx, y: cy, color: "#f60a0a" },
 
-    // INNER CIRCLE
     { x: cx, y: cy - 2 * r, color: "white" },
     { x: cx + h, y: cy - r, color: "black" },
     { x: cx + h, y: cy + r, color: "white" },
@@ -108,7 +92,6 @@ function createCoins() {
     { x: cx - h, y: cy + r, color: "white" },
     { x: cx - h, y: cy - r, color: "black" },
 
-    // OUTER CIRCLE
     { x: cx, y: cy - 4 * r, color: "white" },
     { x: cx + h, y: cy - 3 * r, color: "black" },
     { x: cx + 2 * h, y: cy - 2 * r, color: "white" },
@@ -133,7 +116,6 @@ function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(board, boardX, boardY, boardWidth, boardHeight);
 
-  // DRAW COINS
   for (let coin of coins) {
     ctx.beginPath();
     ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
@@ -149,10 +131,8 @@ function draw() {
     ctx.stroke();
   }
 
-  // DRAW GLOW, SHRINKING PIECES, AND SCORE POPUPS
   drawPocketAnimations();
 
-  // DRAW BOTTOM STRIKER
   if (currentTurn === "bottom" && !strikerPocketedThisTurn) {
     ctx.beginPath();
     ctx.arc(striker.x, striker.y, striker.radius, 0, Math.PI * 2);
@@ -167,8 +147,6 @@ function draw() {
     ctx.strokeStyle = striker.color === "white" ? "#ddd" : "#b64f0a";
     ctx.stroke();
   }
-
-  // DRAW TOP STRIKER
   if (currentTurn === "top" && !topStrikerPocketedThisTurn) {
     ctx.beginPath();
     ctx.arc(topStriker.x, topStriker.y, topStriker.radius, 0, Math.PI * 2);
@@ -191,24 +169,93 @@ function draw() {
   }
 
   drawPlayerProfiles();
-
-  // Show Warning Overlay text if line currently aims through a restricted zone piece
-  const currentState = aimState[currentTurn];
-  if (currentState.aiming && currentState.isTargetingBlocked) {
+  if (gameOver) {
     ctx.save();
-    ctx.fillStyle = "rgba(240, 10, 10, 0.95)";
-    ctx.font = "bold 15px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(
-      "⚠️ ILLEGAL DIRECT HIT! USE REBOUND WALLL SHOTS",
-      canvas.width / 2,
-      currentTurn === "bottom" ? bottomWall - 115 : topWall + 100,
+    const modalWidth = 400;
+    const modalHeight = 250;
+    const modalX = canvas.width / 2 - modalWidth / 2;
+    const modalY = canvas.height / 2 - modalHeight / 2;
+
+    const bgGrad = ctx.createLinearGradient(
+      modalX,
+      modalY,
+      modalX,
+      modalY + modalHeight,
     );
+    bgGrad.addColorStop(0, "#fffcf5");
+    bgGrad.addColorStop(1, "#f7dfb7");
+
+    ctx.shadowColor = "rgba(0,0,0,0.3)";
+    ctx.shadowBlur = 30;
+    ctx.fillStyle = bgGrad;
+    ctx.beginPath();
+    ctx.roundRect(modalX, modalY, modalWidth, modalHeight, 25);
+    ctx.fill();
+
+    ctx.strokeStyle = "#5b3214";
+    ctx.lineWidth = 6;
+    ctx.stroke();
+    ctx.strokeStyle = "#d4af37"; // Gold accent
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const titleGrad = ctx.createLinearGradient(0, modalY + 20, 0, modalY + 70);
+    titleGrad.addColorStop(0, "#8b5a00");
+    titleGrad.addColorStop(0.5, "#d4af37");
+    titleGrad.addColorStop(1, "#5d3a00");
+
+    ctx.fillStyle = titleGrad;
+    ctx.font = "bold 48px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("GAME OVER", canvas.width / 2, modalY + 65);
+
+    let winnerText =
+      player1.score === player2.score
+        ? "IT'S A TIE!"
+        : player1.score > player2.score
+          ? `${player1.name} WINS!`
+          : `${player2.name} WINS!`;
+
+    ctx.font = "bold 26px Arial";
+    ctx.fillStyle = "#ff4d2d";
+    ctx.fillText(winnerText, canvas.width / 2, modalY + 115);
+
+    ctx.font = "18px Georgia";
+    ctx.fillStyle = "#3d1e10";
+    ctx.fillText(
+      `${player1.name} : ${player1.score}   vs   ${player2.name} : ${player2.score}`,
+      canvas.width / 2,
+      modalY + 155,
+    );
+
+    // 7. Decorative Line
+    ctx.beginPath();
+    ctx.moveTo(modalX + 50, modalY + 175);
+    ctx.lineTo(modalX + modalWidth - 50, modalY + 175);
+    ctx.strokeStyle = "#c6a664";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // 8. Call to Action (The "Button" Area)
+    const btnX = canvas.width / 2 - 80;
+    const btnY = modalY + 190;
+    const btnW = 160;
+    const btnH = 35;
+
+    ctx.fillStyle = "#d4af37"; // Gold button background
+    ctx.beginPath();
+    ctx.roundRect(btnX, btnY, btnW, btnH, 8);
+    ctx.fill();
+
+    ctx.fillStyle = "#5b3214"; // Text color
+    ctx.font = "bold 16px Georgia";
+    ctx.textAlign = "center";
+    ctx.fillText("PLAY AGAIN", canvas.width / 2, btnY + 24);
+
     ctx.restore();
   }
 }
 
-// RENDER GLOWS AND FLOATING SCORES
 function drawPocketAnimations() {
   for (let i = pocketedAnimations.length - 1; i >= 0; i--) {
     let anim = pocketedAnimations[i];
@@ -277,6 +324,7 @@ let draggingBottom = false;
 let draggingTop = false;
 
 canvas.addEventListener("mousedown", function (e) {
+  if (gameOver) return;
   const rect = canvas.getBoundingClientRect();
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
@@ -309,6 +357,7 @@ canvas.addEventListener("mouseup", function () {
 });
 
 canvas.addEventListener("mousemove", function (e) {
+  if (gameOver) return;
   if (!draggingBottom && !draggingTop) return;
 
   const rect = canvas.getBoundingClientRect();
@@ -356,7 +405,6 @@ const aimState = {
     aimY: 0,
     power: 0,
     constrainedAngle: 0,
-    isTargetingBlocked: false,
   },
   top: {
     aiming: false,
@@ -364,14 +412,11 @@ const aimState = {
     aimY: 0,
     power: 0,
     constrainedAngle: 0,
-    isTargetingBlocked: false,
   },
 };
 
 let activeAiming = null;
 const MAX_POWER = 90;
-let strikerReturned = false;
-let topStrikerReturned = false;
 let currentTurn = "bottom";
 let turnSwitchPending = false;
 
@@ -382,14 +427,6 @@ let queenPocketedThisTurn = false;
 let coverPocketedThisTurn = false;
 let strikerPocketedThisTurn = false;
 let topStrikerPocketedThisTurn = false;
-
-// Illegal tracking variables
-let shotViolatedDirectHitRule = false;
-let preShotBoardSnapshot = [];
-let preShotPlayer1Score = 0;
-let preShotPlayer2Score = 0;
-let preShotPlayer1Coins = {};
-let preShotPlayer2Coins = {};
 
 canvas.addEventListener("contextmenu", function (e) {
   e.preventDefault();
@@ -423,61 +460,10 @@ canvas.addEventListener("mousedown", function (e) {
   state.aiming = !state.aiming;
   state.aimX = mouseX;
   state.aimY = mouseY;
-  state.isTargetingBlocked = false;
 });
 
 const RAD_20 = (20 * Math.PI) / 180;
 const RAD_160 = (160 * Math.PI) / 180;
-
-// HELPER: Check if a coin is sitting in the active player's arrow loop areas
-function isCoinInRestrictedZone(coin, side) {
-  if (side === "bottom") {
-    // Left Loop Boundary
-    const blDx = coin.x - (leftWall + 68);
-    const blDy = coin.y - (bottomWall - 62);
-    if (Math.sqrt(blDx * blDx + blDy * blDy) < 36) return true;
-
-    // Right Loop Boundary
-    const brDx = coin.x - (rightWall - 68);
-    const brDy = coin.y - (bottomWall - 62);
-    if (Math.sqrt(brDx * brDx + brDy * brDy) < 36) return true;
-  } else {
-    // Top-Left Loop Boundary
-    const tlDx = coin.x - (leftWall + 68);
-    const tlDy = coin.y - (topWall + 62);
-    if (Math.sqrt(tlDx * tlDx + tlDy * tlDy) < 36) return true;
-
-    // Top-Right Loop Boundary
-    const trDx = coin.x - (rightWall - 68);
-    const trDy = coin.y - (topWall + 62);
-    if (Math.sqrt(trDx * trDx + trDy * trDy) < 36) return true;
-  }
-  return false;
-}
-
-// HELPER: Raycast logic to see if aiming vector hits a specific coin directly
-function isAimIntersectingCoin(strikerRef, angle, coin) {
-  const rx = Math.cos(angle);
-  const ry = Math.sin(angle);
-
-  const cx_val = coin.x - strikerRef.x;
-  const cy_val = coin.y - strikerRef.y;
-
-  const projection = cx_val * rx + cy_val * ry;
-  if (projection < 0) return false;
-
-  const closestX = strikerRef.x + rx * projection;
-  const closestY = strikerRef.y + ry * projection;
-  const distSq =
-    (coin.x - closestX) * (coin.x - closestX) +
-    (coin.y - closestY) * (coin.y - closestY);
-
-  return (
-    distSq <
-    (coin.radius + strikerRef.radius + 3) *
-      (coin.radius + strikerRef.radius + 3)
-  );
-}
 
 canvas.addEventListener("mousemove", function (e) {
   if (!activeAiming) return;
@@ -514,17 +500,6 @@ canvas.addEventListener("mousemove", function (e) {
     state.constrainedAngle = downwardAngle;
   }
 
-  // Pre-calculate if this ray line creates an illegal direct strike foul path
-  state.isTargetingBlocked = false;
-  for (let coin of coins) {
-    if (isCoinInRestrictedZone(coin, activeAiming)) {
-      if (isAimIntersectingCoin(strikerRef, state.constrainedAngle, coin)) {
-        state.isTargetingBlocked = true;
-        break;
-      }
-    }
-  }
-
   const dist = Math.sqrt(dx * dx + dy * dy);
   state.power = Math.min(dist, MAX_POWER);
 
@@ -540,21 +515,6 @@ document.addEventListener("click", function () {
   const strikerRef = activeAiming === "bottom" ? striker : topStriker;
   const angle = state.constrainedAngle;
   const speed = state.power * 0.22;
-
-  // 1. MEMORY SNAPSHOT EVERYTHING BEFORE APPLIYING FORCES
-  shotViolatedDirectHitRule = state.isTargetingBlocked;
-
-  preShotBoardSnapshot = coins.map((c) => ({
-    x: c.x,
-    y: c.y,
-    radius: c.radius,
-    color: c.color,
-  }));
-
-  preShotPlayer1Score = player1.score;
-  preShotPlayer2Score = player2.score;
-  preShotPlayer1Coins = { ...player1.coinsPocketed };
-  preShotPlayer2Coins = { ...player2.coinsPocketed };
 
   // 2. LAUNCH PHYSICS
   strikerRef.vx = Math.cos(angle) * speed;
@@ -577,10 +537,6 @@ function drawAimFor(strikerRef, state) {
   if (currentTurn === "top" && topStrikerPocketedThisTurn) return;
 
   ctx.save();
-
-  // ==========================================
-  // 1. MATHEMATICAL SETUP & STRICT PROPORTIONAL SIZES
-  // ==========================================
   const angle = state.constrainedAngle;
   const dx = Math.cos(angle);
   const dy = Math.sin(angle);
@@ -589,64 +545,57 @@ function drawAimFor(strikerRef, state) {
   const maxClampedPower = Math.min(state.power, 65);
 
   // FIX: Tightened the circle scaling factor (0.4) so it matches the power perfectly without ballooning
-  const circleRadius = 24 + maxClampedPower * 0.4; 
-  
+  const circleRadius = 24 + maxClampedPower * 0.4;
+
   // Forward path length remains tight and proportional
   const forwardPathLength = 50 + maxClampedPower * 0.65;
 
   // Coordinate positions along the shot vector
-  const arrowBaseX = strikerRef.x + dx * (circleRadius - 16); 
-  const arrowTipX = strikerRef.x + dx * circleRadius;         
+  const arrowBaseX = strikerRef.x + dx * (circleRadius - 16);
+  const arrowTipX = strikerRef.x + dx * circleRadius;
   const arrowBaseY = strikerRef.y + dy * (circleRadius - 16);
   const arrowTipY = strikerRef.y + dy * circleRadius;
 
-  // ==========================================
   // 2. DRAW THE LARGE BACKWARD/DRAG CIRCLE
-  // ==========================================
   ctx.beginPath();
   ctx.arc(strikerRef.x, strikerRef.y, circleRadius, 0, Math.PI * 2);
-  ctx.setLineDash([2, 4]); 
-  ctx.strokeStyle = state.isTargetingBlocked
-    ? "rgba(220, 50, 50, 0.3)"
-    : "rgba(0, 0, 0, 0.15)"; 
+  ctx.setLineDash([2, 4]);
+  ctx.strokeStyle = "rgba(0,0,0,0.15)";
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  // ==========================================
   // 3. DRAW THE BACKWARD DOTTED TRAIL
-  // ==========================================
   ctx.beginPath();
   ctx.moveTo(strikerRef.x, strikerRef.y);
-  ctx.lineTo(strikerRef.x - dx * circleRadius, strikerRef.y - dy * circleRadius);
+  ctx.lineTo(
+    strikerRef.x - dx * circleRadius,
+    strikerRef.y - dy * circleRadius,
+  );
   ctx.setLineDash([2, 5]);
   ctx.strokeStyle = "rgba(0, 0, 0, 0.3)";
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // ==========================================
   // 4. DRAW THE STICK / SHAFT HOLDING THE ARROW
-  // ==========================================
   ctx.beginPath();
   ctx.moveTo(strikerRef.x, strikerRef.y);
   ctx.lineTo(arrowBaseX, arrowBaseY);
-  
-  ctx.setLineDash([]); 
-  ctx.lineWidth = 4;  
-  ctx.strokeStyle = state.isTargetingBlocked ? "#cc2222" : "#e65100";
+
+  ctx.setLineDash([]);
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "rgba(0,0,0,0.15)";
   ctx.lineCap = "round";
   ctx.stroke();
 
   // Thin background outline for the stick shaft
   ctx.lineWidth = 6;
   ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
-  ctx.globalCompositeOperation = "destination-over"; 
+  ctx.globalCompositeOperation = "destination-over";
   ctx.stroke();
-  ctx.globalCompositeOperation = "source-over";      
+  ctx.globalCompositeOperation = "source-over";
 
-  // ==========================================
   // 5. DRAW THE SOLID GRADIENT ARROWHEAD
-  // ==========================================
-  const arrowheadWidth = 6; 
+  const arrowheadWidth = 6;
   const sideAngleX = Math.cos(angle + Math.PI / 2);
   const sideAngleY = Math.sin(angle + Math.PI / 2);
 
@@ -657,19 +606,20 @@ function drawAimFor(strikerRef, state) {
 
   ctx.beginPath();
   ctx.moveTo(baseLeftX, baseLeftY);
-  ctx.lineTo(arrowTipX, arrowTipY); 
+  ctx.lineTo(arrowTipX, arrowTipY);
   ctx.lineTo(baseRightX, baseRightY);
   ctx.closePath();
 
-  const arrowGrad = ctx.createLinearGradient(arrowBaseX, arrowBaseY, arrowTipX, arrowTipY);
-  if (state.isTargetingBlocked) {
-    arrowGrad.addColorStop(0, "#ff3333");
-    arrowGrad.addColorStop(1, "#990000");
-  } else {
-    arrowGrad.addColorStop(0, "#e65100"); 
-    arrowGrad.addColorStop(0.5, "#ffb300"); 
-    arrowGrad.addColorStop(1, "#fff200"); 
-  }
+  const arrowGrad = ctx.createLinearGradient(
+    arrowBaseX,
+    arrowBaseY,
+    arrowTipX,
+    arrowTipY,
+  );
+
+  arrowGrad.addColorStop(0, "#e65100");
+  arrowGrad.addColorStop(0.5, "#ffb300");
+  arrowGrad.addColorStop(1, "#fff200");
   ctx.fillStyle = arrowGrad;
   ctx.fill();
 
@@ -677,16 +627,14 @@ function drawAimFor(strikerRef, state) {
   ctx.lineWidth = 1;
   ctx.stroke();
 
-  // ==========================================
   // 6. DRAW THE REFINED SMALLER FORWARD DOTS
-  // ==========================================
   let currentX = arrowTipX;
   let currentY = arrowTipY;
   let runDx = dx;
   let runDy = dy;
-  
+
   let distanceTravelled = 0;
-  const stepSize = 12; 
+  const stepSize = 12;
 
   while (distanceTravelled < forwardPathLength) {
     currentX += runDx * stepSize;
@@ -716,18 +664,14 @@ function drawAimFor(strikerRef, state) {
 
     // FIX: Reduced dot radius sizing rules to make them look much smaller, subtle, and clean
     const progressRatio = distanceTravelled / forwardPathLength;
-    const dotRadius = 1.2 + (progressRatio * 1.0); 
+    const dotRadius = 1.2 + progressRatio * 1.0;
 
     ctx.beginPath();
     ctx.arc(currentX, currentY, dotRadius, 0, Math.PI * 2);
-    
-    if (state.isTargetingBlocked) {
-      ctx.fillStyle = "rgba(255, 60, 60, 0.9)";
-    } else {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
-      ctx.shadowBlur = 1;
-    }
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.shadowColor = "rgba(0, 0, 0, 0.1)";
+    ctx.shadowBlur = 1;
     ctx.fill();
   }
 
@@ -811,32 +755,44 @@ function updateGame() {
       ? strikerPocketedThisTurn
       : topStrikerPocketedThisTurn;
 
+  // Update active striker physics and check pocket
   if (!activeStrikerPocketed) {
     updatePiece(activeStriker);
-
     for (let pocket of pockets) {
-      const sdx = activeStriker.x - pocket.x;
-      const sdy = activeStriker.y - pocket.y;
-      const sDistSq = sdx * sdx + sdy * sdy;
-
-      if (sDistSq < POCKET_RADIUS * POCKET_RADIUS) {
+      if (
+        Math.hypot(activeStriker.x - pocket.x, activeStriker.y - pocket.y) <
+        POCKET_RADIUS
+      ) {
         const activePlayer = currentTurn === "bottom" ? player1 : player2;
         let isQuiet = false;
 
-        if (activePlayer.score > 0) {
+        // Penalty should almost always apply
+        if (
+          activePlayer.score > 0 ||
+          activePlayer.coinsPocketed.white > 0 ||
+          activePlayer.coinsPocketed.black > 0
+        ) {
           activePlayer.score -= 5;
           if (activePlayer.score < 0) activePlayer.score = 0;
 
           if (activePlayer.coinsPocketed.black > 0) {
             activePlayer.coinsPocketed.black--;
-            coins.push(new Coin(cx, cy, r, "black"));
+            coins.push(new Coin(cx, cy, r, "black")); // Black back to board
           } else if (activePlayer.coinsPocketed.white > 0) {
-            activePlayer.coinsPocketed.white--;
-            activePlayer.coinsPocketed.black++;
-            coins.push(new Coin(cx, cy, r, "black"));
+            activePlayer.coinsPocketed.white--; // Lose White
+            activePlayer.coinsPocketed.black++; // Gain Black
+            coins.push(new Coin(cx, cy, r, "white")); // White back to board
+
+            // Remove one Black from board
+            for (let i = 0; i < coins.length; i++) {
+              if (coins[i].color === "black") {
+                coins.splice(i, 1);
+                break;
+              }
+            }
           }
         } else {
-          isQuiet = true;
+          isQuiet = true; // Only quiet when truly 0 score and 0 coins
         }
 
         if (currentTurn === "bottom") strikerPocketedThisTurn = true;
@@ -863,6 +819,7 @@ function updateGame() {
     }
   }
 
+  // Coin movement and pocketing logic (keep your existing code here)
   for (let i = coins.length - 1; i >= 0; i--) {
     const coin = coins[i];
     updatePiece(coin);
@@ -870,11 +827,7 @@ function updateGame() {
     let isPocketed = false;
     let targetPocket = null;
     for (let pocket of pockets) {
-      const pdx = coin.x - pocket.x;
-      const pdy = coin.y - pocket.y;
-      const distSq = pdx * pdx + pdy * pdy;
-
-      if (distSq < POCKET_RADIUS * POCKET_RADIUS) {
+      if (Math.hypot(coin.x - pocket.x, coin.y - pocket.y) < POCKET_RADIUS) {
         isPocketed = true;
         targetPocket = pocket;
         break;
@@ -923,20 +876,13 @@ function updateGame() {
     }
   }
 
+  // Collisions
   if (!activeStrikerPocketed) {
-    for (let coin of coins) {
-      resolveCollision(activeStriker, coin);
-    }
+    for (let coin of coins) resolveCollision(activeStriker, coin);
   }
-
   for (let i = 0; i < coins.length; i++) {
-    const coinA = coins[i];
-    const coinAIsMoving = coinA.vx !== 0 || coinA.vy !== 0;
     for (let j = i + 1; j < coins.length; j++) {
-      const coinB = coins[j];
-      if (coinAIsMoving || coinB.vx !== 0 || coinB.vy !== 0) {
-        resolveCollision(coinA, coinB);
-      }
+      resolveCollision(coins[i], coins[j]);
     }
   }
 
@@ -945,67 +891,72 @@ function updateGame() {
 
   if (everythingStopped && turnSwitchPending) {
     resetStriker(striker, true);
-    strikerReturned = true;
     resetStriker(topStriker, false);
-    topStrikerReturned = true;
 
-    // ==========================================================
-    // CRITICAL FIX: BOARD POSITION ROLLBACK ZONE ON DIRECT FOUL
-    // ==========================================================
-    if (shotViolatedDirectHitRule) {
-      // Re-populate the whole active coins collection from pristine saved states
-      coins = preShotBoardSnapshot.map((snap) => {
-        let restoredCoin = new Coin(snap.x, snap.y, snap.radius, snap.color);
-        restoredCoin.vx = 0;
-        restoredCoin.vy = 0;
-        return restoredCoin;
-      });
+    const activePlayer = currentTurn === "bottom" ? player1 : player2;
+    const currentStrikerFouled =
+      currentTurn === "bottom"
+        ? strikerPocketedThisTurn
+        : topStrikerPocketedThisTurn;
 
-      // Restore exact statistical numerical metrics
-      player1.score = preShotPlayer1Score;
-      player2.score = preShotPlayer2Score;
-      player1.coinsPocketed = { ...preShotPlayer1Coins };
-      player2.coinsPocketed = { ...preShotPlayer2Coins };
-
-      // Switch turns immediately (The player loses their round entirely)
-      currentTurn = currentTurn === "bottom" ? "top" : "bottom";
-    } else {
-      // Execute normal legitimate carrom round scoring updates
-      const activePlayer = currentTurn === "bottom" ? player1 : player2;
-      const currentStrikerFouled =
-        currentTurn === "bottom"
-          ? strikerPocketedThisTurn
-          : topStrikerPocketedThisTurn;
-
-      if (queenWaitingForCover) {
-        if (coverPocketedThisTurn && !currentStrikerFouled) {
-          queenWaitingForCover = false;
-        } else {
-          activePlayer.score -= 25;
-          if (activePlayer.score < 0) activePlayer.score = 0;
-          activePlayer.coinsPocketed.red--;
-          queenWaitingForCover = false;
-          coins.push(new Coin(cx, cy, r, "#f60a0a"));
-        }
+    // --- QUEEN & COVER LOGIC ---
+    if (queenWaitingForCover) {
+      if (coverPocketedThisTurn && !currentStrikerFouled) {
+        // Success: Queen is covered
+        queenWaitingForCover = false;
+      } else {
+        // Failure: Penalty
+        activePlayer.score = Math.max(0, activePlayer.score - 25);
+        activePlayer.coinsPocketed.red--;
+        queenWaitingForCover = false;
+        coins.push(new Coin(cx, cy, r, "#f60a0a")); // Queen back on board
       }
+    } else if (queenPocketedThisTurn && !currentStrikerFouled) {
+      queenWaitingForCover = true;
+    }
 
-      if (queenPocketedThisTurn && !currentStrikerFouled) {
-        queenWaitingForCover = true;
-      }
-
-      if (currentStrikerFouled || !scoredThisTurn) {
-        currentTurn = currentTurn === "bottom" ? "top" : "bottom";
+    // --- END GAME PENALTY (The "Last 2 Coins" Rule) ---
+    // If only 2 coins left and one is Queen, player MUST pocket Queen.
+    if (coins.length === 2 && coins.some((c) => c.color === "#f60a0a")) {
+      // If the turn ends and the Queen is still on the board,
+      // treat it as a foul because it wasn't targeted correctly.
+      if (!queenPocketedThisTurn) {
+        activePlayer.score = Math.max(0, activePlayer.score - 5);
+        // Trigger a fake pocket animation for the penalty
+        pocketedAnimations.push({
+          x: pockets[0].x,
+          y: pockets[0].y,
+          textY: pockets[0].y - 20,
+          scoreText: "-5",
+          initialRadius: r,
+          currentRadius: r,
+          color: "#000",
+          drawPiece: false,
+          isFoul: true,
+          opacity: 1.0,
+        });
       }
     }
 
-    // Clean flag containers
+    // Switch turn
+    if (currentStrikerFouled || !scoredThisTurn) {
+      currentTurn = currentTurn === "bottom" ? "top" : "bottom";
+    }
+
+    // --- GAME END LOGIC ---
+    if (coins.length === 0 && !gameOver) {
+      gameOver = true;
+    }
+
+    // Reset flags
     strikerPocketedThisTurn = false;
     topStrikerPocketedThisTurn = false;
     turnSwitchPending = false;
-    shotViolatedDirectHitRule = false;
+    scoredThisTurn = false;
+    queenPocketedThisTurn = false;
+    coverPocketedThisTurn = false;
   }
 }
-
 function strikerStopped() {
   return (
     strikerPocketedThisTurn ||
@@ -1031,11 +982,59 @@ function gameLoop() {
   if (aimState.bottom.aiming) drawAimFor(striker, aimState.bottom);
   if (aimState.top.aiming) drawAimFor(topStriker, aimState.top);
   requestAnimationFrame(gameLoop);
+  canvas.addEventListener("click", function (e) {
+    if (!gameOver) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Define the button coordinates used in the draw function
+    const modalY = canvas.height / 2 - 125; // 250/2 = 125
+    const btnX = canvas.width / 2 - 80;
+    const btnY = modalY + 190;
+    const btnW = 160;
+    const btnH = 35;
+
+    // Check if click is inside the button
+    if (
+      mouseX >= btnX &&
+      mouseX <= btnX + btnW &&
+      mouseY >= btnY &&
+      mouseY <= btnY + btnH
+    ) {
+      resetGame();
+    }
+  });
 }
 
-// ===================================================================
+function resetGame() {
+  // Reset players
+  player1.score = 0;
+  player1.coinsPocketed = { white: 0, black: 0, red: 0 };
+  player2.score = 0;
+  player2.coinsPocketed = { white: 0, black: 0, red: 0 };
+
+  // Reset board/coins
+  createCoins();
+
+  // Reset Game State Flags
+  gameOver = false;
+  currentTurn = "bottom";
+  scoredThisTurn = false;
+  queenWaitingForCover = false;
+  strikerPocketedThisTurn = false;
+  topStrikerPocketedThisTurn = false;
+
+  // Reset Strikers
+  resetStriker(striker, true);
+  resetStriker(topStriker, false);
+
+  // Clear any leftover animations
+  pocketedAnimations.length = 0;
+}
+
 // 2. DRAW PLAYER PROFILES
-// ===================================================================
 function drawPlayerProfiles() {
   const cardWidth = 210;
   const cardHeight = 84;
@@ -1202,8 +1201,6 @@ function drawPlayerProfiles() {
   ctx.fillStyle = "#ff4d2d";
   ctx.font = "bold 13px Arial";
   ctx.fillText("2 PLAYERS", canvas.width / 2, centerY + 48);
-
   ctx.restore();
 }
-
 gameLoop();
