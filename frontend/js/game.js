@@ -767,7 +767,6 @@ function updateGame() {
         const activePlayer = currentTurn === "bottom" ? player1 : player2;
         let isQuiet = false;
 
-        // Penalty should almost always apply
         if (
           activePlayer.score > 0 ||
           activePlayer.coinsPocketed.white > 0 ||
@@ -778,13 +777,12 @@ function updateGame() {
 
           if (activePlayer.coinsPocketed.black > 0) {
             activePlayer.coinsPocketed.black--;
-            coins.push(new Coin(cx, cy, r, "black")); // Black back to board
+            coins.push(new Coin(cx, cy, r, "black"));
           } else if (activePlayer.coinsPocketed.white > 0) {
-            activePlayer.coinsPocketed.white--; // Lose White
-            activePlayer.coinsPocketed.black++; // Gain Black
-            coins.push(new Coin(cx, cy, r, "white")); // White back to board
+            activePlayer.coinsPocketed.white--;
+            activePlayer.coinsPocketed.black++;
+            coins.push(new Coin(cx, cy, r, "white"));
 
-            // Remove one Black from board
             for (let i = 0; i < coins.length; i++) {
               if (coins[i].color === "black") {
                 coins.splice(i, 1);
@@ -793,7 +791,7 @@ function updateGame() {
             }
           }
         } else {
-          isQuiet = true; // Only quiet when truly 0 score and 0 coins
+          isQuiet = true;
         }
 
         if (currentTurn === "bottom") strikerPocketedThisTurn = true;
@@ -822,7 +820,7 @@ function updateGame() {
     }
   }
 
-  // Coin movement and pocketing logic (keep your existing code here)
+  // Coin movement and pocketing
   for (let i = coins.length - 1; i >= 0; i--) {
     const coin = coins[i];
     updatePiece(coin);
@@ -839,20 +837,19 @@ function updateGame() {
 
     if (isPocketed) {
       const activePlayer = currentTurn === "bottom" ? player1 : player2;
-      let addedPoints = "";
 
       if (coin.color === "white") {
         activePlayer.coinsPocketed.white++;
         activePlayer.score += 10;
         showNotification("+10", "#4ade80", "White Coin");
         scoredThisTurn = true;
-        coverPocketedThisTurn = true; // 👈 add this
+        coverPocketedThisTurn = true;
       } else if (coin.color === "black") {
         activePlayer.coinsPocketed.black++;
         activePlayer.score += 5;
         showNotification("+5", "#4ade80", "Black Coin");
         scoredThisTurn = true;
-        coverPocketedThisTurn = true; // 👈 add this
+        coverPocketedThisTurn = true;
       } else if (coin.color === "#f60a0a") {
         activePlayer.coinsPocketed.red++;
         activePlayer.score += 25;
@@ -865,7 +862,7 @@ function updateGame() {
         x: targetPocket.x,
         y: targetPocket.y,
         textY: targetPocket.y - 12,
-        scoreText: addedPoints,
+        scoreText: "",
         initialRadius: coin.radius,
         currentRadius: coin.radius,
         color: coin.color,
@@ -892,41 +889,54 @@ function updateGame() {
   const everythingStopped =
     strikerStopped() && topStrikerStopped() && coinsStopped();
 
+  // === TURN RESOLUTION ===
   if (everythingStopped && turnSwitchPending) {
-    resetStriker(striker, true);
-    resetStriker(topStriker, false);
-
     const activePlayer = currentTurn === "bottom" ? player1 : player2;
     const currentStrikerFouled =
       currentTurn === "bottom"
         ? strikerPocketedThisTurn
         : topStrikerPocketedThisTurn;
 
-    // --- QUEEN & COVER LOGIC ---
-    if (queenWaitingForCover) {
-      if (coverPocketedThisTurn && !currentStrikerFouled) {
-        showNotification("QUEEN COVERED!", "#4ade80", "Good Play");
-        queenWaitingForCover = false;
+    // Queen & Cover Logic
+    if (queenPocketedThisTurn && !currentStrikerFouled) {
+      if (coverPocketedThisTurn) {
+        showNotification("QUEEN COVERED!", "#4ade80", "Excellent Play");
       } else {
         activePlayer.score = Math.max(0, activePlayer.score - 25);
+        if (activePlayer.coinsPocketed.red > 0)
+          activePlayer.coinsPocketed.red--;
         showNotification("-25 PENALTY", "#ff3333", "Queen not covered", true);
-        queenWaitingForCover = false;
         coins.push(new Coin(cx, cy, r, "#f60a0a"));
       }
-    } else if (queenPocketedThisTurn && !currentStrikerFouled) {
-      queenWaitingForCover = true;
+      queenWaitingForCover = false;
     }
 
-    if (coins.length === 2 && coins.some((c) => c.color === "#f60a0a")) {
-      if (!queenPocketedThisTurn) {
+    if (queenWaitingForCover && !queenPocketedThisTurn) {
+      queenWaitingForCover = false;
+    }
+
+    // Endgame Queen Rule (Must pocket Queen first)
+    if (
+      !queenPocketedThisTurn &&
+      coverPocketedThisTurn &&
+      !currentStrikerFouled
+    ) {
+      const hasQueenOnBoard = coins.some((c) => c.color === "#f60a0a");
+      if (hasQueenOnBoard && coins.length <= 1) {
         activePlayer.score = Math.max(0, activePlayer.score - 5);
+        coins.push(new Coin(cx, cy, r, "black"));
+
+        if (activePlayer.coinsPocketed.black > 0) {
+          activePlayer.coinsPocketed.black--;
+        }
+
         showNotification(
           "-5 PENALTY",
           "#ff3333",
           "Must pocket Queen first",
           true,
         );
-        // Trigger a fake pocket animation for the penalty
+
         pocketedAnimations.push({
           x: pockets[0].x,
           y: pockets[0].y,
@@ -934,7 +944,7 @@ function updateGame() {
           scoreText: "-5",
           initialRadius: r,
           currentRadius: r,
-          color: "#000",
+          color: "#222",
           drawPiece: false,
           isFoul: true,
           opacity: 1.0,
@@ -942,17 +952,21 @@ function updateGame() {
       }
     }
 
-    // Switch turn
+    // === IMPORTANT: Reset Strikers to original positions ===
+    resetStriker(striker, true);
+    resetStriker(topStriker, false);
+
+    // Switch turn only if fouled or no score made
     if (currentStrikerFouled || !scoredThisTurn) {
       currentTurn = currentTurn === "bottom" ? "top" : "bottom";
     }
 
-    // --- GAME END LOGIC ---
+    // Game Over Check
     if (coins.length === 0 && !gameOver) {
       gameOver = true;
     }
 
-    // Reset flags
+    // Reset all turn flags
     strikerPocketedThisTurn = false;
     topStrikerPocketedThisTurn = false;
     turnSwitchPending = false;
