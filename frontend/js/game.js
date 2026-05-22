@@ -169,6 +169,7 @@ function draw() {
   }
 
   drawPlayerProfiles();
+  drawNotifications();
   if (gameOver) {
     ctx.save();
     const modalWidth = 400;
@@ -798,6 +799,8 @@ function updateGame() {
         if (currentTurn === "bottom") strikerPocketedThisTurn = true;
         else topStrikerPocketedThisTurn = true;
 
+        showNotification("-5 PENALTY", "#ff3333", "Striker pocketed", true);
+
         pocketedAnimations.push({
           x: pocket.x,
           y: pocket.y,
@@ -841,19 +844,19 @@ function updateGame() {
       if (coin.color === "white") {
         activePlayer.coinsPocketed.white++;
         activePlayer.score += 10;
-        addedPoints = "+10";
+        showNotification("+10", "#4ade80", "White Coin");
         scoredThisTurn = true;
-        if (queenWaitingForCover) coverPocketedThisTurn = true;
+        coverPocketedThisTurn = true; // 👈 add this
       } else if (coin.color === "black") {
         activePlayer.coinsPocketed.black++;
         activePlayer.score += 5;
-        addedPoints = "+5";
+        showNotification("+5", "#4ade80", "Black Coin");
         scoredThisTurn = true;
-        if (queenWaitingForCover) coverPocketedThisTurn = true;
+        coverPocketedThisTurn = true; // 👈 add this
       } else if (coin.color === "#f60a0a") {
         activePlayer.coinsPocketed.red++;
         activePlayer.score += 25;
-        addedPoints = "+25";
+        showNotification("+25", "#facc15", "QUEEN POCKETED!", false);
         scoredThisTurn = true;
         queenPocketedThisTurn = true;
       }
@@ -902,26 +905,27 @@ function updateGame() {
     // --- QUEEN & COVER LOGIC ---
     if (queenWaitingForCover) {
       if (coverPocketedThisTurn && !currentStrikerFouled) {
-        // Success: Queen is covered
+        showNotification("QUEEN COVERED!", "#4ade80", "Good Play");
         queenWaitingForCover = false;
       } else {
-        // Failure: Penalty
         activePlayer.score = Math.max(0, activePlayer.score - 25);
-        activePlayer.coinsPocketed.red--;
+        showNotification("-25 PENALTY", "#ff3333", "Queen not covered", true);
         queenWaitingForCover = false;
-        coins.push(new Coin(cx, cy, r, "#f60a0a")); // Queen back on board
+        coins.push(new Coin(cx, cy, r, "#f60a0a"));
       }
     } else if (queenPocketedThisTurn && !currentStrikerFouled) {
       queenWaitingForCover = true;
     }
 
-    // --- END GAME PENALTY (The "Last 2 Coins" Rule) ---
-    // If only 2 coins left and one is Queen, player MUST pocket Queen.
     if (coins.length === 2 && coins.some((c) => c.color === "#f60a0a")) {
-      // If the turn ends and the Queen is still on the board,
-      // treat it as a foul because it wasn't targeted correctly.
       if (!queenPocketedThisTurn) {
         activePlayer.score = Math.max(0, activePlayer.score - 5);
+        showNotification(
+          "-5 PENALTY",
+          "#ff3333",
+          "Must pocket Queen first",
+          true,
+        );
         // Trigger a fake pocket animation for the penalty
         pocketedAnimations.push({
           x: pockets[0].x,
@@ -1071,8 +1075,9 @@ function drawPlayerProfiles() {
     ctx.roundRect(x, y, cardWidth, cardHeight, 15);
     ctx.fill();
 
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = active ? "#ff4d2d" : "#5b3214";
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = active ? "#e01111" : "#5b3214";
+
     ctx.stroke();
 
     const avatarX = x + 34;
@@ -1202,5 +1207,170 @@ function drawPlayerProfiles() {
   ctx.font = "bold 13px Arial";
   ctx.fillText("2 PLAYERS", canvas.width / 2, centerY + 48);
   ctx.restore();
+}
+// ==================== NOTIFICATION SYSTEM ====================
+const notifications = [];
+
+class Notification {
+  constructor(text, color, subText = "", isFoul = false) {
+    this.text = text;
+    this.subText = subText;
+    this.color = color;
+    this.opacity = 1.0;
+    this.y = 185;
+    this.life = 160;
+    this.isFoul = isFoul;
+    // detect special types by text content
+    this.isQueen = text.includes("25") && !isFoul;
+    this.isCover = text === "QUEEN COVERED!";
+    this.isQueenPenalty = text.includes("25") && isFoul;
+  }
+}
+
+function showNotification(text, color, subText = "", isFoul = false) {
+  notifications.push(new Notification(text, color, subText, isFoul));
+}
+
+function drawNotifications() {
+  for (let i = notifications.length - 1; i >= 0; i--) {
+    const note = notifications[i];
+    const ncx = canvas.width / 2;
+    const w = 290,
+      h = 76,
+      rad = 20;
+    const x = ncx - w / 2,
+      y = note.y - 14;
+
+    ctx.save();
+    ctx.globalAlpha = note.opacity;
+
+    // — Theme —
+    let glowCol, glassBg, borderCol, scoreCol, iconChar, labelText;
+    if (note.isCover) {
+      glowCol = "rgba(56,182,255,0.35)";
+      glassBg = "rgba(0,50,90,0.55)";
+      borderCol = "rgba(56,220,255,0.25)";
+      scoreCol = "#38dfff";
+      iconChar = "✔";
+      labelText = "GOOD PLAY";
+    } else if (note.isQueenPenalty) {
+      glowCol = "rgba(255,26,110,0.35)";
+      glassBg = "rgba(80,0,30,0.55)";
+      borderCol = "rgba(255,80,160,0.25)";
+      scoreCol = "#ff6eb0";
+      iconChar = "♛";
+      labelText = "QUEEN RETURNED";
+    } else if (note.isQueen) {
+      glowCol = "rgba(255,210,0,0.35)";
+      glassBg = "rgba(80,55,0,0.55)";
+      borderCol = "rgba(255,220,0,0.25)";
+      scoreCol = "#ffe066";
+      iconChar = "♛";
+      labelText = "COVER NEXT SHOT";
+    } else if (note.isFoul) {
+      glowCol = "rgba(255,60,60,0.35)";
+      glassBg = "rgba(80,0,0,0.55)";
+      borderCol = "rgba(255,80,80,0.25)";
+      scoreCol = "#ff7070";
+      iconChar = "✕";
+      labelText = "FOUL · PENALTY";
+    } else {
+      glowCol = "rgba(0,255,100,0.35)";
+      glassBg = "rgba(0,70,25,0.55)";
+      borderCol = "rgba(78,255,122,0.25)";
+      scoreCol = "#4eff7a";
+      iconChar = "✦";
+      labelText = "SCORED";
+    }
+
+    // — Outer glow bloom —
+    ctx.shadowColor = glowCol.replace("0.35", "0.6");
+    ctx.shadowBlur = 32;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, rad);
+    ctx.fillStyle = glassBg;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // — Glass border —
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, rad);
+    ctx.strokeStyle = borderCol;
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // — Top shine (glass effect) —
+    const shineGrad = ctx.createLinearGradient(x, y, x, y + h * 0.5);
+    shineGrad.addColorStop(0, "rgba(255,255,255,0.12)");
+    shineGrad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h * 0.5, [rad, rad, 0, 0]);
+    ctx.fillStyle = shineGrad;
+    ctx.fill();
+
+    // — Icon circle —
+    const iconX = x + 52,
+      iconY = y + h / 2;
+    ctx.shadowColor = scoreCol;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(iconX, iconY, 21, 0, Math.PI * 2);
+    ctx.fillStyle = scoreCol + "18";
+    ctx.fill();
+    ctx.strokeStyle = scoreCol + "55";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.font = "bold 19px Arial";
+    ctx.textAlign = "center";
+    ctx.shadowColor = scoreCol;
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = scoreCol;
+    ctx.fillText(iconChar, iconX, iconY + 7);
+    ctx.shadowBlur = 0;
+
+    // — Divider —
+    ctx.beginPath();
+    ctx.moveTo(x + 83, y + 16);
+    ctx.lineTo(x + 83, y + h - 16);
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // — Score / Title text —
+    ctx.textAlign = "left";
+    const isCoverType = note.isCover;
+    ctx.shadowColor = scoreCol;
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = scoreCol;
+    ctx.font = isCoverType ? "bold 19px Arial" : "bold 26px Arial";
+    ctx.fillText(
+      isCoverType ? "Queen Covered" : note.text,
+      x + 97,
+      y + (isCoverType ? 35 : 37),
+    );
+    ctx.shadowBlur = 0;
+
+    // — Sub text —
+    ctx.font = "500 12.5px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.72)";
+    ctx.fillText(note.subText || "", x + 97, y + 53);
+
+    // — Label —
+    ctx.font = "9px Arial";
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.fillText(labelText, x + 97, y + 67);
+
+    ctx.restore();
+
+    // — Animate —
+    note.life--;
+    const fadeIn = Math.min(1, (160 - note.life) / 10);
+    const fadeOut = Math.min(1, note.life / 30);
+    note.opacity = Math.min(fadeIn, fadeOut);
+    note.y -= 0.28;
+    if (note.life <= 0) notifications.splice(i, 1);
+  }
 }
 gameLoop();
