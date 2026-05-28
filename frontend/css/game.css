@@ -1,8 +1,33 @@
 .game_body {
-    background: radial-gradient(circle at center,#deb887 0%,#c89b6d 40%,#8b5a2b 100%);
-    font-family: Arial;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  background: radial-gradient(
+    circle at center,
+    #deb887 0%,
+    #c89b6d 40%,
+    #8b5a2b 100%
+  );
+  font-family: Arial;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#help {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  padding: 15px 25px;
+  font-size: 20px;
+  background-color: #dbbda3;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#help:hover {
+  transform: scale(1.05);
+}
+
+#help:active {
+  transform: scale(0.95);
 }

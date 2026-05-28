@@ -1388,3 +1388,83 @@ function drawNotifications() {
   }
 }
 gameLoop();
+
+document.getElementById("help").addEventListener("click", function () {
+  showHelpModal();
+});
+
+// ==================== HELP MODAL FUNCTION ====================
+
+function showHelpModal() {
+  // Remove existing modal if any
+  let existing = document.getElementById("help-modal");
+  if (existing) existing.remove();
+
+  const modal = document.createElement("div");
+  modal.id = "help-modal";
+  modal.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 520px;
+        background: linear-gradient(#fffcf5, #f7dfb7);
+        border: 8px solid #5b3214;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        z-index: 1000;
+        padding: 30px 25px;
+        font-family: Arial, sans-serif;
+        color: #3d1e10;
+        text-align: left;
+    `;
+
+  modal.innerHTML = `
+        <div style="text-align:center; margin-bottom:20px;">
+            <h1 style="color:#5b3214; margin:0; font-size:32px;">HOW TO PLAY CARROM</h1>
+        </div>
+
+        <div style="max-height:420px; overflow-y:auto; padding-right:10px;">
+
+            <h3 style="color:#8b5a00; margin:18px 0 8px;">🎮 CONTROLS</h3>
+            <ul style="margin:8px 0 20px; line-height:1.6;">
+                <li>Left Click + Drag = Position Striker</li>
+                <li>Right Click + Move around = Aim & Set Power</li>
+                <li>Click again to Shoot</li>
+            </ul>
+
+            <h3 style="color:#8b5a00; margin:18px 0 8px;">🪙 COIN VALUES</h3>
+            <ul style="margin:8px 0 20px; line-height:1.6;">
+                <li><strong>White Coin</strong> → +10 points</li>
+                <li><strong>Black Coin</strong> → +5 points</li>
+                <li><strong>Red Queen</strong> → +25 points</li>
+            </ul>
+
+            <h3 style="color:#8b5a00; margin:18px 0 8px;">📜 IMPORTANT RULES</h3>
+            <ul style="margin:8px 0 20px; line-height:1.6;">
+                <li>Pocket Queen → Must cover with a coin in same turn</li>
+                <li>Fail to cover Queen → -25 penalty</li>
+                <li>Striker falls in pocket → -5 penalty</li>
+                <li>Pocket a coin = Get another turn</li>
+                <li>Miss or foul = Turn passes</li>
+            </ul>
+
+            <h3 style="color:#8b5a00; margin:18px 0 8px;">💡 PRO TIPS</h3>
+            <ul style="margin:8px 0 20px; line-height:1.6;">
+                <li>Don't use full power every time</li>
+                <li>Plan shots to pocket multiple coins</li>
+                <li>Be very careful with the Queen</li>
+                <li>Use angles wisely</li>
+            </ul>
+        </div>
+
+        <div style="text-align:center; margin-top:20px;">
+            <button onclick="this.parentElement.parentElement.remove()" 
+                    style="padding:12px 30px; font-size:16px; background:#c23d3d; color:white; border:none; border-radius:8px; cursor:pointer;">
+                CLOSE
+            </button>
+        </div>
+    `;
+
+  document.body.appendChild(modal);
+}
