@@ -897,25 +897,51 @@ function updateGame() {
         ? strikerPocketedThisTurn
         : topStrikerPocketedThisTurn;
 
-    // Queen & Cover Logic
-    if (queenPocketedThisTurn && !currentStrikerFouled) {
-      if (coverPocketedThisTurn) {
-        showNotification("QUEEN COVERED!", "#4ade80", "Excellent Play");
-      } else {
+    // --- QUEEN LOGIC ---
+
+    // Case 1: Queen pocketed this turn
+    if (queenPocketedThisTurn) {
+      if (currentStrikerFouled) {
+        // Striker foul + queen pocketed → queen always returns, no cover possible
         activePlayer.score = Math.max(0, activePlayer.score - 25);
         if (activePlayer.coinsPocketed.red > 0)
           activePlayer.coinsPocketed.red--;
-        showNotification("-25 PENALTY", "#ff3333", "Queen not covered", true);
         coins.push(new Coin(cx, cy, r, "#f60a0a"));
+        showNotification(
+          "-25 PENALTY",
+          "#ff3333",
+          "Queen returned (striker foul)",
+          true,
+        );
+        queenWaitingForCover = false;
+      } else if (coverPocketedThisTurn) {
+        // Queen + cover coin in same turn → covered immediately
+        showNotification("QUEEN COVERED!", "#4ade80", "Excellent Play");
+        queenWaitingForCover = false;
+      } else {
+        // Queen pocketed, no cover yet, no striker foul → give one more turn to cover
+        showNotification("Cover Queen", "#facc15", "Pocket a coin next turn");
+        queenWaitingForCover = true;
+      }
+    }
+
+    // Case 2: Queen was waiting from last turn — resolve cover now
+    else if (queenWaitingForCover) {
+      if (!coverPocketedThisTurn) {
+        // Failed to cover (miss, no cover coin) → queen returns, penalty
+        activePlayer.score = Math.max(0, activePlayer.score - 25);
+        if (activePlayer.coinsPocketed.red > 0)
+          activePlayer.coinsPocketed.red--;
+        coins.push(new Coin(cx, cy, r, "#f60a0a"));
+        showNotification("-25 PENALTY", "#ff3333", "Queen not covered", true);
+      } else {
+        // Pocketed a cover coin → queen is covered, even if striker also fell
+        showNotification("QUEEN COVERED!", "#4ade80", "Cover successful");
       }
       queenWaitingForCover = false;
     }
 
-    if (queenWaitingForCover && !queenPocketedThisTurn) {
-      queenWaitingForCover = false;
-    }
-
-    // Endgame Queen Rule (Must pocket Queen first)
+    // --- ENDGAME QUEEN RULE (last coin) ---
     if (
       !queenPocketedThisTurn &&
       coverPocketedThisTurn &&
@@ -924,49 +950,37 @@ function updateGame() {
       const hasQueenOnBoard = coins.some((c) => c.color === "#f60a0a");
       if (hasQueenOnBoard && coins.length <= 1) {
         activePlayer.score = Math.max(0, activePlayer.score - 5);
-        coins.push(new Coin(cx, cy, r, "black"));
-
-        if (activePlayer.coinsPocketed.black > 0) {
+        if (activePlayer.coinsPocketed.black > 0)
           activePlayer.coinsPocketed.black--;
-        }
-
+        coins.push(new Coin(cx, cy, r, "black"));
         showNotification(
           "-5 PENALTY",
           "#ff3333",
           "Must pocket Queen first",
           true,
         );
-
-        pocketedAnimations.push({
-          x: pockets[0].x,
-          y: pockets[0].y,
-          textY: pockets[0].y - 20,
-          scoreText: "-5",
-          initialRadius: r,
-          currentRadius: r,
-          color: "#222",
-          drawPiece: false,
-          isFoul: true,
-          opacity: 1.0,
-        });
       }
     }
 
-    // === IMPORTANT: Reset Strikers to original positions ===
+    // --- RESET STRIKERS ---
     resetStriker(striker, true);
     resetStriker(topStriker, false);
 
-    // Switch turn only if fouled or no score made
-    if (currentStrikerFouled || !scoredThisTurn) {
+    // --- TURN SWITCH ---
+    // Keep turn whenever the player pockets a coin and does not foul.
+    // This includes pocketing the queen and earning the extra cover turn.
+    const keepTurn = scoredThisTurn && !currentStrikerFouled;
+
+    if (!keepTurn) {
       currentTurn = currentTurn === "bottom" ? "top" : "bottom";
     }
 
-    // Game Over Check
+    // --- GAME OVER ---
     if (coins.length === 0 && !gameOver) {
       gameOver = true;
     }
 
-    // Reset all turn flags
+    // --- RESET FLAGS ---
     strikerPocketedThisTurn = false;
     topStrikerPocketedThisTurn = false;
     turnSwitchPending = false;
@@ -1041,6 +1055,8 @@ function resetGame() {
   currentTurn = "bottom";
   scoredThisTurn = false;
   queenWaitingForCover = false;
+  queenPocketedThisTurn = false; // ← add this
+  coverPocketedThisTurn = false;
   strikerPocketedThisTurn = false;
   topStrikerPocketedThisTurn = false;
 
